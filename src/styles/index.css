@@ -1,0 +1,101 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-veltrix-black text-white;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  ::selection {
+    background: rgba(0, 212, 255, 0.3);
+    color: white;
+  }
+
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #0a0a0a;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #262626;
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #404040;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-veltrix-black-light/80 backdrop-blur-xl border border-veltrix-gray-800/50;
+  }
+
+  .glow-border {
+    @apply relative;
+  }
+
+  .glow-border::before {
+    content: '';
+    @apply absolute inset-0 rounded-lg opacity-0 transition-opacity duration-300;
+    background: linear-gradient(135deg, rgba(0, 212, 255, 0.2), transparent 50%);
+  }
+
+  .glow-border:hover::before {
+    @apply opacity-100;
+  }
+
+  .text-gradient {
+    @apply bg-gradient-to-r from-veltrix-blue to-white bg-clip-text text-transparent;
+  }
+
+  .btn-primary {
+    @apply px-6 py-3 bg-veltrix-blue text-veltrix-black font-semibold rounded-lg 
+           hover:bg-veltrix-blue-dark transition-all duration-300 hover:shadow-glow
+           active:scale-95;
+  }
+
+  .btn-secondary {
+    @apply px-6 py-3 border border-veltrix-gray-700 text-white rounded-lg 
+           hover:border-veltrix-blue hover:text-veltrix-blue transition-all duration-300
+           active:scale-95;
+  }
+
+  .input-field {
+    @apply w-full px-4 py-3 bg-veltrix-black-light border border-veltrix-gray-800 
+           rounded-lg text-white placeholder-veltrix-gray-500
+           focus:border-veltrix-blue focus:outline-none focus:ring-1 focus:ring-veltrix-blue/50
+           transition-all duration-300;
+  }
+
+  .card-hover {
+    @apply transition-all duration-500 hover:-translate-y-2 hover:shadow-glow;
+  }
+}
+
+@layer utilities {
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-out;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}

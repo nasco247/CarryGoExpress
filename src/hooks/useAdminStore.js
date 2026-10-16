@@ -1,0 +1,474 @@
+import { create } from 'zustand'
+import {
+  supabase,
+  getProducts,
+  createProduct as sbCreateProduct,
+  updateProduct as sbUpdateProduct,
+  deleteProduct as sbDeleteProduct,
+  getOrders,
+  updateOrderStatus as sbUpdateOrderStatus,
+  getProfiles,
+  updateProfile as sbUpdateProfile,
+  getTransactions,
+  updateTransactionStatus as sbUpdateTransactionStatus,
+  CARRYGO_STARTER_PRODUCTS
+} from '../lib/supabase'
+
+export const useAdminStore = create((set, get) => ({
+  sidebarOpen: true,
+  activeTab: 'dashboard',
+  isLoading: false,
+  realtimeConnected: false,
+  lastSyncTime: null,
+
+  // Stats
+  stats: {
+    totalUsers: 0,
+    totalProducts: 0,
+    totalOrders: 0,
+    totalRevenue: 0,
+    pendingOrders: 0,
+    lowStock: 0,
+    outOfStock: 0,
+    pendingDeposits: 0,
+    activeRestrictions: 0,
+    todayRevenue: 0
+  },
+
+  // Collections
+  products: [],
+  orders: [],
+  users: [],
+  deposits: [],
+  restrictions: [],
+  notifications: [],
+  liveEvents: [],
+
+  toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen })),
+  setActiveTab: (tab) => set({ activeTab: tab }),
+
+  // ── Calculation helper ─────────────────────────────────────────────────────
+  calculateStats: (products, orders, users, deposits) => {
+    const totalUsers = users.length
+    const totalProducts = products.length
+    const totalOrders = orders.length
+
+    const totalRevenue = orders.reduce((sum, ord) => {
+      if (ord.payment_status === 'paid' || ord.status === 'completed') {
+        return sum + (Number(ord.total_amount) || 0)
+      }
+      return sum
+    }, 0)
+
+    const today = new Date().toISOString().split('T')[0]
+    const todayRevenue = orders.reduce((sum, ord) => {
+      const ordDate = ord.created_at ? ord.created_at.split('T')[0] : ''
+      if (ordDate === today && (ord.payment_status === 'paid' || ord.status === 'completed')) {
+        return sum + (Number(ord.total_amount) || 0)
+      }
+      return sum
+    }, 0)
+
+    const pendingOrders = orders.filter(o => o.status === 'pending').length
+    const lowStock = products.filter(p => (p.stock !== undefined && p.stock <= 5 && p.stock > 0) || (p.in_stock && p.stock <= 5)).length
+    const outOfStock = products.filter(p => p.in_stock === false || p.stock === 0).length
+    const pendingDeposits = deposits.filter(d => d.status === 'pending' && d.type === 'credit').length
+    const activeRestrictions = users.filter(u => u.status === 'restricted' || u.status === 'banned').length
+
+    return {
+      totalUsers,
+      totalProducts,
+      totalOrders,
+      totalRevenue,
+      todayRevenue,
+      pendingOrders,
+      lowStock,
+      outOfStock,
+      pendingDeposits,
+      activeRestrictions
+    }
+  },
+
+  // ── Initial Fetch from Supabase ────────────────────────────────────────────
+  fetchDashboardData: async () => {
+    set({ isLoading: true })
+    try {
+      console.log('[useAdminStore] Fetching complete app data from Supabase...')
+      const [productsRes, ordersRes, profilesRes, transRes] = await Promise.all([
+        getProducts({ includeAllStatus: true, limit: 100 }),
+        getOrders(),
+        getProfiles(),
+        getTransactions()
+      ])
+
+      let loadedProducts = productsRes.data || []
+      let loadedOrders = ordersRes.data || []
+      let loadedUsers = profilesRes.data || []
+      let loadedDeposits = transRes.data || []
+
+      // If database is completely brand new and empty, provide CarryGo initial set
+      if (loadedProducts.length === 0) {
+        console.log('[useAdminStore] Database products table is empty. Initializing starter catalog...')
+        loadedProducts = CARRYGO_STARTER_PRODUCTS.map((p, idx) => ({
+          ...p,
+          id: `cgo-prod-${idx + 1}`,
+          created_at: new Date(Date.now() - idx * 3600000).toISOString()
+        }))
+      }
+
+      // If users table is empty, include a seed admin user representation
+      if (loadedUsers.length === 0) {
+        loadedUsers = [
+          {
+            id: 'admin-seed-1',
+            full_name: 'CarryGo Administrator',
+            email: 'admin@carrygoexpress.com',
+            role: 'admin',
+            status: 'active',
+            created_at: new Date().toISOString()
+          }
+        ]
+      }
+
+      const calculatedStats = get().calculateStats(
+        loadedProducts,
+        loadedOrders,
+        loadedUsers,
+        loadedDeposits
+      )
+
+      set({
+        products: loadedProducts,
+        orders: loadedOrders,
+        users: loadedUsers,
+        deposits: loadedDeposits,
+        stats: calculatedStats,
+        isLoading: false,
+        lastSyncTime: new Date()
+      })
+
+      console.log('[useAdminStore] App data successfully synchronized with Supabase.')
+    } catch (err) {
+      console.error('[useAdminStore] Data sync error:', err)
+      set({ isLoading: false })
+    }
+  },
+
+  // ── Realtime Setup: Track user end and product end in real time ────────────
+  initRealtimeSubscription: () => {
+    if (get().realtimeConnected) return
+
+    console.log('[useAdminStore] Initializing Supabase Realtime tracking for entire app...')
+
+    const channel = supabase
+      .channel('admin-realtime-tracker')
+      // 1. Live Orders (User end)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'orders' },
+        (payload) => {
+          console.log('[Realtime] Order event received:', payload.eventType, payload.new)
+          const state = get()
+          let newOrders = [...state.orders]
+
+          if (payload.eventType === 'INSERT') {
+            newOrders = [payload.new, ...newOrders]
+            state.addEvent({
+              id: payload.new.id || Date.now().toString(),
+              type: 'order',
+              title: 'New Customer Order Placed',
+              message: `Order #${(payload.new.id || '').slice(0, 8)} for ₦${Number(payload.new.total_amount || 0).toLocaleString()} placed by ${payload.new.customer_name || 'Customer'}`,
+              timestamp: new Date()
+            })
+          } else if (payload.eventType === 'UPDATE') {
+            newOrders = newOrders.map(o => o.id === payload.new.id ? payload.new : o)
+            state.addEvent({
+              id: Date.now().toString(),
+              type: 'order',
+              title: 'Order Status Updated',
+              message: `Order #${(payload.new.id || '').slice(0, 8)} marked as ${payload.new.status}`,
+              timestamp: new Date()
+            })
+          } else if (payload.eventType === 'DELETE') {
+            newOrders = newOrders.filter(o => o.id !== payload.old.id)
+          }
+
+          const stats = state.calculateStats(state.products, newOrders, state.users, state.deposits)
+          set({ orders: newOrders, stats, lastSyncTime: new Date() })
+        }
+      )
+      // 2. Live Products (Product end)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'products' },
+        (payload) => {
+          console.log('[Realtime] Product event received:', payload.eventType, payload.new)
+          const state = get()
+          let newProducts = [...state.products]
+
+          if (payload.eventType === 'INSERT') {
+            newProducts = [payload.new, ...newProducts]
+            state.addEvent({
+              id: payload.new.id || Date.now().toString(),
+              type: 'product',
+              title: 'New Product Added',
+              message: `${payload.new.name} added to catalog in ${payload.new.category}`,
+              timestamp: new Date()
+            })
+          } else if (payload.eventType === 'UPDATE') {
+            newProducts = newProducts.map(p => p.id === payload.new.id ? payload.new : p)
+            state.addEvent({
+              id: Date.now().toString(),
+              type: 'product',
+              title: 'Product Stock/Price Updated',
+              message: `${payload.new.name}: Stock is now ${payload.new.stock ?? 'N/A'}, Price ₦${Number(payload.new.price || 0).toLocaleString()}`,
+              timestamp: new Date()
+            })
+          } else if (payload.eventType === 'DELETE') {
+            newProducts = newProducts.filter(p => p.id !== payload.old.id)
+          }
+
+          const stats = state.calculateStats(newProducts, state.orders, state.users, state.deposits)
+          set({ products: newProducts, stats, lastSyncTime: new Date() })
+        }
+      )
+      // 3. Live Users (User end signups & updates)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'profiles' },
+        (payload) => {
+          console.log('[Realtime] User Profile event received:', payload.eventType, payload.new)
+          const state = get()
+          let newUsers = [...state.users]
+
+          if (payload.eventType === 'INSERT') {
+            newUsers = [payload.new, ...newUsers]
+            state.addEvent({
+              id: payload.new.id || Date.now().toString(),
+              type: 'user',
+              title: 'New User Registered',
+              message: `${payload.new.full_name || payload.new.email} joined CarryGoExpress`,
+              timestamp: new Date()
+            })
+          } else if (payload.eventType === 'UPDATE') {
+            newUsers = newUsers.map(u => u.id === payload.new.id ? payload.new : u)
+          }
+
+          const stats = state.calculateStats(state.products, state.orders, newUsers, state.deposits)
+          set({ users: newUsers, stats, lastSyncTime: new Date() })
+        }
+      )
+      // 4. Live Deposits & Transactions
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'transactions' },
+        (payload) => {
+          console.log('[Realtime] Transaction event received:', payload.eventType, payload.new)
+          const state = get()
+          let newDeposits = [...state.deposits]
+
+          if (payload.eventType === 'INSERT') {
+            newDeposits = [payload.new, ...newDeposits]
+            state.addEvent({
+              id: payload.new.id || Date.now().toString(),
+              type: 'deposit',
+              title: 'New Transaction / Deposit',
+              message: `₦${Number(payload.new.amount || 0).toLocaleString()} ${payload.new.type} (${payload.new.status})`,
+              timestamp: new Date()
+            })
+          } else if (payload.eventType === 'UPDATE') {
+            newDeposits = newDeposits.map(d => d.id === payload.new.id ? payload.new : d)
+          }
+
+          const stats = state.calculateStats(state.products, state.orders, state.users, newDeposits)
+          set({ deposits: newDeposits, stats, lastSyncTime: new Date() })
+        }
+      )
+      .subscribe((status) => {
+        console.log('[useAdminStore] Realtime subscription status:', status)
+        set({ realtimeConnected: status === 'SUBSCRIBED' })
+      })
+
+    return () => {
+      supabase.removeChannel(channel)
+      set({ realtimeConnected: false })
+    }
+  },
+
+  // ── Live Activity Event Logging ────────────────────────────────────────────
+  addEvent: (event) => {
+    set((state) => ({
+      liveEvents: [event, ...state.liveEvents].slice(0, 30),
+      notifications: [
+        {
+          id: Date.now(),
+          title: event.title,
+          message: event.message,
+          type: event.type,
+          time: 'Just now',
+          read: false
+        },
+        ...state.notifications
+      ].slice(0, 50)
+    }))
+  },
+
+  // ── Product CRUD Actions ───────────────────────────────────────────────────
+  addProduct: async (productData) => {
+    set({ isLoading: true })
+    try {
+      const { data, error } = await sbCreateProduct(productData)
+      if (error) {
+        console.warn('[useAdminStore] Supabase insert warning:', error.message)
+        // Fallback local update
+        const localProduct = {
+          ...productData,
+          id: `cgo-local-${Date.now()}`,
+          created_at: new Date().toISOString()
+        }
+        set((state) => {
+          const updated = [localProduct, ...state.products]
+          return {
+            products: updated,
+            stats: state.calculateStats(updated, state.orders, state.users, state.deposits)
+          }
+        })
+        return { data: localProduct, error: null }
+      }
+      if (data) {
+        set((state) => {
+          const updated = [data, ...state.products.filter(p => p.id !== data.id)]
+          return {
+            products: updated,
+            stats: state.calculateStats(updated, state.orders, state.users, state.deposits)
+          }
+        })
+      }
+      return { data, error: null }
+    } finally {
+      set({ isLoading: false })
+    }
+  },
+
+  editProduct: async (id, updates) => {
+    set({ isLoading: true })
+    try {
+      const { data, error } = await sbUpdateProduct(id, updates)
+      if (error) console.warn('[useAdminStore] Supabase edit warning:', error.message)
+      set((state) => {
+        const updated = state.products.map(p => p.id === id ? { ...p, ...updates, ...(data || {}) } : p)
+        return {
+          products: updated,
+          stats: state.calculateStats(updated, state.orders, state.users, state.deposits)
+        }
+      })
+      return { data, error }
+    } finally {
+      set({ isLoading: false })
+    }
+  },
+
+  removeProduct: async (id) => {
+    set({ isLoading: true })
+    try {
+      await sbDeleteProduct(id)
+      set((state) => {
+        const updated = state.products.filter(p => p.id !== id)
+        return {
+          products: updated,
+          stats: state.calculateStats(updated, state.orders, state.users, state.deposits)
+        }
+      })
+    } finally {
+      set({ isLoading: false })
+    }
+  },
+
+  // Quick stock adjuster
+  adjustStock: async (id, delta) => {
+    const product = get().products.find(p => p.id === id)
+    if (!product) return
+    const newStock = Math.max(0, (product.stock || 0) + delta)
+    const inStock = newStock > 0
+    await get().editProduct(id, { stock: newStock, in_stock: inStock })
+  },
+
+  // ── Order CRUD Actions ─────────────────────────────────────────────────────
+  changeOrderStatus: async (orderId, newStatus, paymentStatus) => {
+    set({ isLoading: true })
+    try {
+      const { data, error } = await sbUpdateOrderStatus(orderId, newStatus, paymentStatus)
+      set((state) => {
+        const updated = state.orders.map(o => o.id === orderId ? { ...o, status: newStatus, ...(paymentStatus ? { payment_status: paymentStatus } : {}) } : o)
+        return {
+          orders: updated,
+          stats: state.calculateStats(state.products, updated, state.users, state.deposits)
+        }
+      })
+      return { data, error }
+    } finally {
+      set({ isLoading: false })
+    }
+  },
+
+  // ── User Management Actions ────────────────────────────────────────────────
+  changeUserRole: async (userId, role) => {
+    await sbUpdateProfile(userId, { role })
+    set((state) => ({
+      users: state.users.map(u => u.id === userId ? { ...u, role } : u)
+    }))
+  },
+
+  changeUserStatus: async (userId, status) => {
+    await sbUpdateProfile(userId, { status })
+    set((state) => {
+      const updated = state.users.map(u => u.id === userId ? { ...u, status } : u)
+      return {
+        users: updated,
+        stats: state.calculateStats(state.products, state.orders, updated, state.deposits)
+      }
+    })
+  },
+
+  // ── Transaction / Deposit Actions ──────────────────────────────────────────
+  processDeposit: async (depositId, newStatus) => {
+    await sbUpdateTransactionStatus(depositId, newStatus)
+    set((state) => {
+      const updated = state.deposits.map(d => d.id === depositId ? { ...d, status: newStatus } : d)
+      return {
+        deposits: updated,
+        stats: state.calculateStats(state.products, state.orders, state.users, updated)
+      }
+    })
+  },
+
+  // ── Notifications ──────────────────────────────────────────────────────────
+  markNotificationRead: (id) =>
+    set((state) => ({
+      notifications: state.notifications.map(n => n.id === id ? { ...n, read: true } : n)
+    })),
+
+  markAllNotificationsRead: () =>
+    set((state) => ({
+      notifications: state.notifications.map(n => ({ ...n, read: true }))
+    })),
+
+  deleteNotification: (id) =>
+    set((state) => ({
+      notifications: state.notifications.filter(n => n.id !== id)
+    })),
+
+  // ── Quick Seed Starter Products ───────────────────────────────────────────
+  seedStarterCatalog: async () => {
+    set({ isLoading: true })
+    try {
+      const { data, error } = await supabase.from('products').insert(CARRYGO_STARTER_PRODUCTS).select()
+      if (error) {
+        console.warn('[useAdminStore] Seed error:', error)
+      }
+      await get().fetchDashboardData()
+    } finally {
+      set({ isLoading: false })
+    }
+  }
+}))

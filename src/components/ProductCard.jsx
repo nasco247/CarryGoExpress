@@ -58,14 +58,19 @@ export default function ProductCard({ product }) {
 
       {/* Content */}
       <div className="p-5">
-        <div className="flex items-center gap-2 mb-2">
+        <div className="flex items-center gap-2 mb-2 flex-wrap">
           <span className="text-xs font-medium text-veltrix-blue uppercase tracking-wider">
-            {product.brand}
+            {product.brand || 'CarryGo'}
           </span>
           <span className="text-veltrix-gray-600">•</span>
-          <span className="text-xs text-veltrix-gray-500">
+          <span className="text-xs text-veltrix-gray-400">
             {product.category}
           </span>
+          {product.subcategory && (
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-veltrix-blue/15 text-veltrix-blue font-medium border border-veltrix-blue/20">
+              {product.subcategory}
+            </span>
+          )}
         </div>
 
         <Link to={`/product/${product.id}`}>

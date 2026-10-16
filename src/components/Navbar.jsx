@@ -42,12 +42,12 @@ export default function Navbar() {
 
   const navLinks = [
     { name: 'Home', path: '/' },
-    { name: 'TVs', path: '/category/televisions' },
-    { name: 'Audio', path: '/category/audio' },
-    { name: 'Projectors', path: '/category/projectors' },
-    { name: 'Headphones', path: '/category/headphones' },
-    { name: 'Monitors', path: '/category/monitors' },
-    { name: 'Deals', path: '/deals' },
+    { name: 'Phones', path: '/products?category=Smartphones%20%26%20Tablets' },
+    { name: 'Laptops', path: '/products?category=Laptops%20%26%20Computers' },
+    { name: 'Wearables', path: '/products?category=Smartwatches%20%26%20Wearables' },
+    { name: 'Audio', path: '/products?category=Audio%20%26%20Sound' },
+    { name: 'Gaming', path: '/products?category=Gaming%20%26%20Handhelds' },
+    { name: 'Accessories', path: '/products?category=Accessories%20%26%20Power' },
   ]
 
   return (

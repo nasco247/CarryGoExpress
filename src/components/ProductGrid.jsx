@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Filter, Grid3X3, LayoutList, SlidersHorizontal, ChevronDown } from 'lucide-react'
 import ProductCard from './ProductCard'
 import { useProducts } from '../hooks/useProducts'
+import { GADGET_CATEGORIES, GADGET_BRANDS, getSubcategoriesForCategory } from '../lib/gadgetCategories'
 
 const sortOptions = [
   { value: 'name:asc', label: 'Name: A-Z' },
@@ -16,22 +17,24 @@ export default function ProductGrid({ filters = {}, hideSidebar = false, hideHea
   const [sortBy, setSortBy] = useState('name:asc')
   const [showFilters, setShowFilters] = useState(false)
 
-  const [priceRange, setPriceRange] = useState([0, 2000000])
+  const [priceRange, setPriceRange] = useState([0, 5000000])
   const [selectedBrands, setSelectedBrands] = useState(filters.brand ? [filters.brand] : [])
   const [selectedCategories, setSelectedCategories] = useState(filters.category ? [filters.category] : [])
+  const [selectedSubcategories, setSelectedSubcategories] = useState(filters.subcategory ? [filters.subcategory] : [])
 
   const { products, loading, error, totalCount } = useProducts({
     ...filters,
     brand: selectedBrands.length > 0 ? selectedBrands : undefined,
     category: selectedCategories.length > 0 ? selectedCategories : undefined,
+    subcategory: selectedSubcategories.length > 0 ? selectedSubcategories : undefined,
     minPrice: priceRange[0],
     maxPrice: priceRange[1],
     sortBy: sortBy.split(':')[0],
     sortOrder: sortBy.split(':')[1]
   })
 
-  const brands = ['Hisense', 'Samsung', 'LG', 'Sony']
-  const categories = ['Televisions', 'Audio', 'Projectors', 'Monitors', 'Smart Home']
+  const brands = GADGET_BRANDS.slice(0, 8)
+  const categories = GADGET_CATEGORIES.map(c => c.name)
 
   return (
     <div className={`max-w-7xl mx-auto ${hideHeader ? '' : 'px-4 sm:px-6 lg:px-8 py-8'}`}>
@@ -180,6 +183,41 @@ export default function ProductGrid({ filters = {}, hideSidebar = false, hideHea
                   </div>
                   <span className="text-sm text-veltrix-gray-400 group-hover:text-white transition-colors">
                     {category}
+                  </span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Subcategories */}
+          <div className="bg-veltrix-black-light rounded-xl border border-veltrix-gray-800/50 p-5">
+            <h3 className="text-sm font-bold text-white mb-4">Sub-Categories</h3>
+            <div className="space-y-3 max-h-56 overflow-y-auto pr-1">
+              {(selectedCategories.length > 0 
+                ? selectedCategories.flatMap(cat => getSubcategoriesForCategory(cat))
+                : ['iPhone', 'Samsung Galaxy', 'Google Pixel', 'MacBooks', 'Gaming Laptops', 'Apple Watch', 'AirPods & Earbuds', 'PlayStation 5']
+              ).map((sub) => (
+                <label key={sub} className="flex items-center gap-3 cursor-pointer group">
+                  <div className="relative">
+                    <input
+                      type="checkbox"
+                      checked={selectedSubcategories.includes(sub)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedSubcategories([...selectedSubcategories, sub])
+                        } else {
+                          setSelectedSubcategories(selectedSubcategories.filter(s => s !== sub))
+                        }
+                      }}
+                      className="peer sr-only"
+                    />
+                    <div className="w-5 h-5 border-2 border-veltrix-gray-700 rounded peer-checked:bg-veltrix-blue peer-checked:border-veltrix-blue transition-all" />
+                    <svg className="absolute inset-0 w-5 h-5 text-veltrix-black opacity-0 peer-checked:opacity-100 transition-opacity" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <span className="text-sm text-veltrix-gray-400 group-hover:text-white transition-colors">
+                    {sub}
                   </span>
                 </label>
               ))}

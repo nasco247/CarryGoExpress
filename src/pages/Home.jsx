@@ -16,10 +16,10 @@ export default function Home() {
               Best Sellers
             </span>
             <h2 className="text-3xl lg:text-4xl font-bold text-white mt-3">
-              Featured Electronics
+              Featured Flagship Gadgets
             </h2>
             <p className="mt-4 text-veltrix-gray-400 max-w-2xl mx-auto">
-              Discover our most popular electronics, handpicked for quality and performance
+              Discover our top-rated smartphones, laptops, audio gear, and gaming tech handpicked for quality and performance
             </p>
           </div>
           <ProductGrid filters={{ limit: 8 }} hideSidebar hideHeader />

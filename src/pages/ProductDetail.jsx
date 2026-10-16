@@ -102,9 +102,15 @@ export default function ProductDetail() {
             <ArrowLeft className="w-3.5 h-3.5" /> Home
           </Link>
           <ChevronRight className="w-4 h-4" />
-          <Link to={`/category/${product.category?.toLowerCase()}`} className="hover:text-veltrix-blue transition-colors capitalize">
+          <Link to={`/products?category=${encodeURIComponent(product.category || '')}`} className="hover:text-veltrix-blue transition-colors">
             {product.category}
           </Link>
+          {product.subcategory && (
+            <>
+              <ChevronRight className="w-4 h-4" />
+              <span className="text-veltrix-blue font-medium">{product.subcategory}</span>
+            </>
+          )}
           <ChevronRight className="w-4 h-4" />
           <span className="text-veltrix-gray-300 truncate max-w-xs">{product.name}</span>
         </nav>

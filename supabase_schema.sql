@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS public.products (
   updated_at     TIMESTAMPTZ DEFAULT NOW()
 );
 
--- If stock column doesn't exist, add it
+-- If stock, sku, or subcategory column doesn't exist, add it
 DO $$ 
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='products' AND column_name='stock') THEN
@@ -32,6 +32,9 @@ BEGIN
   END IF;
   IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='products' AND column_name='sku') THEN
     ALTER TABLE public.products ADD COLUMN sku TEXT;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='products' AND column_name='subcategory') THEN
+    ALTER TABLE public.products ADD COLUMN subcategory TEXT;
   END IF;
 END $$;
 

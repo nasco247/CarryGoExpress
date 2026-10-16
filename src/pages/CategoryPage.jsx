@@ -1,42 +1,73 @@
 import { useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, useSearchParams, Link } from 'react-router-dom'
 import {
   ChevronRight, Search, Grid3X3, List,
-  ArrowUpDown, Package, X, ArrowLeft
+  ArrowUpDown, Package, X, ArrowLeft, Filter
 } from 'lucide-react'
 import { useProducts } from '../hooks/useProducts'
 import ProductCard from '../components/ProductCard'
+import { GADGET_CATEGORIES, getSubcategoriesForCategory } from '../lib/gadgetCategories'
 
-const CATEGORY_DETAILS = {
-  televisions: {
-    label: 'Televisions',
-    description: 'Explore 4K ULED, QLED, and Smart TVs engineered for vivid, crystal-clear entertainment.',
-    image: 'https://images.unsplash.com/photo-1593784991095-a205069470b6?w=1200',
+const GADGET_CATEGORY_DETAILS = {
+  'smartphones-tablets': {
+    label: 'Smartphones & Tablets',
+    description: 'Latest flagship iPhones, Samsung Galaxy, Google Pixel, and high-performance tablets with full warranty.',
+    image: 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=1200',
   },
-  audio: {
-    label: 'Audio',
-    description: 'Immersive soundbars and multi-channel home audio systems with room-filling acoustics.',
-    image: 'https://images.unsplash.com/photo-1545454675-3531b543be5d?w=1200',
+  phones: {
+    label: 'Smartphones & Tablets',
+    description: 'Latest flagship iPhones, Samsung Galaxy, Google Pixel, and high-performance tablets with full warranty.',
+    image: 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=1200',
   },
-  projectors: {
-    label: 'Projectors',
-    description: 'Cinematic 4K Laser TVs and portable HD projectors for theater experiences at home.',
-    image: 'https://images.unsplash.com/photo-1517604931442-7105376f2611?w=1200',
+  'laptops-computers': {
+    label: 'Laptops & Computers',
+    description: 'Apple MacBooks, high-FPS gaming rigs, ultrabooks and creative workstation laptops.',
+    image: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=1200',
   },
-  headphones: {
-    label: 'Headphones',
-    description: 'Wireless noise-cancelling headphones and earbuds designed for pristine music playback.',
+  laptops: {
+    label: 'Laptops & Computers',
+    description: 'Apple MacBooks, high-FPS gaming rigs, ultrabooks and creative workstation laptops.',
+    image: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=1200',
+  },
+  'smartwatches-wearables': {
+    label: 'Smartwatches & Wearables',
+    description: 'Apple Watch Series, Galaxy Watch, fitness trackers and smart eyewear to keep you connected.',
+    image: 'https://images.unsplash.com/photo-1508685096489-7aacd43bd3b1?w=1200',
+  },
+  wearables: {
+    label: 'Smartwatches & Wearables',
+    description: 'Apple Watch Series, Galaxy Watch, fitness trackers and smart eyewear to keep you connected.',
+    image: 'https://images.unsplash.com/photo-1508685096489-7aacd43bd3b1?w=1200',
+  },
+  'audio-sound': {
+    label: 'Audio & Sound',
+    description: 'Premium AirPods, noise-canceling headphones, punchy wireless speakers and sound systems.',
     image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=1200',
   },
-  monitors: {
-    label: 'Monitors',
-    description: 'High-refresh rate gaming displays and ultra-sharp professional monitors for work and play.',
-    image: 'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=1200',
+  audio: {
+    label: 'Audio & Sound',
+    description: 'Premium AirPods, noise-canceling headphones, punchy wireless speakers and sound systems.',
+    image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=1200',
   },
-  'smart-home': {
-    label: 'Smart Home',
-    description: 'Intelligent automation hubs, smart plugs, and connected devices for a modern home.',
-    image: 'https://images.unsplash.com/photo-1558002038-1055907df827?w=1200',
+  'gaming-consoles': {
+    label: 'Gaming & Handhelds',
+    description: 'PlayStation 5 consoles, Xbox Series X|S, Nintendo Switch, and portable gaming gear.',
+    image: 'https://images.unsplash.com/photo-1606813907291-d86efa9b94db?w=1200',
+  },
+  gaming: {
+    label: 'Gaming & Handhelds',
+    description: 'PlayStation 5 consoles, Xbox Series X|S, Nintendo Switch, and portable gaming gear.',
+    image: 'https://images.unsplash.com/photo-1606813907291-d86efa9b94db?w=1200',
+  },
+  'accessories-power': {
+    label: 'Accessories & Power',
+    description: 'Fast GaN chargers, MagSafe gear, high-capacity power banks, cables and protective cases.',
+    image: 'https://images.unsplash.com/photo-1583863788434-e58a36330cf0?w=1200',
+  },
+  accessories: {
+    label: 'Accessories & Power',
+    description: 'Fast GaN chargers, MagSafe gear, high-capacity power banks, cables and protective cases.',
+    image: 'https://images.unsplash.com/photo-1583863788434-e58a36330cf0?w=1200',
   }
 }
 
@@ -48,22 +79,34 @@ const SORT_OPTIONS = [
 ]
 
 export default function CategoryPage() {
-  const { category: slug } = useParams()
-  const normalizedSlug = (slug || '').toLowerCase().trim()
+  const { category: paramSlug } = useParams()
+  const [searchParams, setSearchParams] = useSearchParams()
 
-  const meta = CATEGORY_DETAILS[normalizedSlug] || {
-    label: slug ? slug.charAt(0).toUpperCase() + slug.slice(1).replace('-', ' ') : 'Category',
-    description: 'Browse genuine CarryGoExpress electronics with manufacturer warranty and fast delivery.',
-    image: 'https://images.unsplash.com/photo-1593784991095-a205069470b6?w=1200',
+  const queryCategory = searchParams.get('category')
+  const querySubcategory = searchParams.get('subcategory')
+
+  const effectiveCategory = queryCategory || paramSlug || ''
+  const normalizedSlug = effectiveCategory.toLowerCase().trim()
+
+  const meta = GADGET_CATEGORY_DETAILS[normalizedSlug] || {
+    label: effectiveCategory 
+      ? (GADGET_CATEGORIES.find(c => c.name.toLowerCase() === effectiveCategory.toLowerCase())?.name || effectiveCategory)
+      : 'All Gadgets',
+    description: 'Explore genuine CarryGoExpress electronics & gadgets with manufacturer warranty and express insured delivery.',
+    image: 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=1200',
   }
 
+  const [selectedSubcategory, setSelectedSubcategory] = useState(querySubcategory || 'all')
   const [sort, setSort] = useState('name:asc')
   const [search, setSearch] = useState('')
   const [viewMode, setViewMode] = useState('grid')
 
+  const availableSubcategories = getSubcategoriesForCategory(meta.label)
+
   const sortParts = sort.split(':')
   const { products, loading, error, totalCount } = useProducts({
-    category: meta.label,
+    category: meta.label !== 'All Gadgets' ? meta.label : undefined,
+    subcategory: selectedSubcategory !== 'all' ? selectedSubcategory : undefined,
     sortBy: sortParts[0],
     sortOrder: sortParts[1],
     search: search.trim() || undefined,
@@ -87,8 +130,14 @@ export default function CategoryPage() {
               <Link to="/" className="hover:text-veltrix-blue transition-colors">Home</Link>
               <ChevronRight className="w-3.5 h-3.5" />
               <span className="text-veltrix-blue font-semibold">{meta.label}</span>
+              {selectedSubcategory !== 'all' && (
+                <>
+                  <ChevronRight className="w-3.5 h-3.5" />
+                  <span className="text-white font-mono">{selectedSubcategory}</span>
+                </>
+              )}
             </nav>
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white mb-3">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white mb-3 tracking-tight">
               {meta.label}
             </h1>
             <p className="text-sm sm:text-base text-veltrix-gray-300">
@@ -99,6 +148,43 @@ export default function CategoryPage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+
+        {/* ── Subcategory Dive-In Chips (iPhone, Samsung Galaxy, etc.) ── */}
+        {availableSubcategories.length > 0 && (
+          <div className="mb-8">
+            <div className="flex items-center gap-2 mb-3">
+              <Filter className="w-4 h-4 text-veltrix-blue" />
+              <span className="text-xs font-bold text-white uppercase tracking-wider">Sub-Categories</span>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => setSelectedSubcategory('all')}
+                className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
+                  selectedSubcategory === 'all'
+                    ? 'bg-veltrix-blue text-veltrix-black font-bold shadow-glow'
+                    : 'bg-veltrix-black-light border border-veltrix-gray-800 text-veltrix-gray-300 hover:border-veltrix-gray-700'
+                }`}
+              >
+                All {meta.label}
+              </button>
+
+              {availableSubcategories.map(sub => (
+                <button
+                  key={sub}
+                  onClick={() => setSelectedSubcategory(sub)}
+                  className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
+                    selectedSubcategory === sub
+                      ? 'bg-veltrix-blue text-veltrix-black font-bold shadow-glow'
+                      : 'bg-veltrix-black-light border border-veltrix-gray-800 text-veltrix-gray-300 hover:border-veltrix-gray-700'
+                  }`}
+                >
+                  {sub}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* ── Toolbar ────────────────────────────────────────────────────────── */}
         <div className="flex flex-col sm:flex-row gap-3 mb-8">
@@ -174,16 +260,16 @@ export default function CategoryPage() {
         ) : products.length === 0 ? (
           <div className="text-center py-20 bg-veltrix-black-light rounded-2xl border border-veltrix-gray-800 p-12">
             <Package className="w-16 h-16 text-veltrix-gray-600 mx-auto mb-4" />
-            <h3 className="text-xl font-bold text-white mb-2">No Products Available</h3>
+            <h3 className="text-xl font-bold text-white mb-2">No Products Found</h3>
             <p className="text-veltrix-gray-400 text-sm max-w-md mx-auto mb-6">
-              There are currently no products in the {meta.label} category. New stock will be listed soon.
+              There are currently no listed gadgets in {meta.label} {selectedSubcategory !== 'all' ? `(${selectedSubcategory})` : ''}.
             </p>
             <Link
               to="/"
               className="inline-flex items-center gap-2 px-6 py-3 bg-veltrix-blue text-veltrix-black font-semibold rounded-xl hover:shadow-glow transition-all"
             >
               <ArrowLeft className="w-4 h-4" />
-              Browse Other Categories
+              Browse All Gadgets
             </Link>
           </div>
         ) : (

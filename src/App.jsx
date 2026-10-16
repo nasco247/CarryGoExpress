@@ -121,6 +121,12 @@ export default function App() {
           </MainLayout>
         } />
 
+        <Route path="/products" element={
+          <MainLayout>
+            <CategoryPage />
+          </MainLayout>
+        } />
+
         <Route path="/search" element={
           <MainLayout>
             <Home />

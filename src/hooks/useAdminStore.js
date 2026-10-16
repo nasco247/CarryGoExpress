@@ -11,6 +11,7 @@ import {
   updateProfile as sbUpdateProfile,
   getTransactions,
   updateTransactionStatus as sbUpdateTransactionStatus,
+  getSiteVisits,
   CARRYGO_STARTER_PRODUCTS
 } from '../lib/supabase'
 
@@ -32,7 +33,12 @@ export const useAdminStore = create((set, get) => ({
     outOfStock: 0,
     pendingDeposits: 0,
     activeRestrictions: 0,
-    todayRevenue: 0
+    todayRevenue: 0,
+    totalVisits: 0,
+    uniqueVisitors: 0,
+    activeVisitorsNow: 0,
+    mobileVisitsCount: 0,
+    desktopVisitsCount: 0
   },
 
   // Collections
@@ -43,12 +49,13 @@ export const useAdminStore = create((set, get) => ({
   restrictions: [],
   notifications: [],
   liveEvents: [],
+  visits: [],
 
   toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen })),
   setActiveTab: (tab) => set({ activeTab: tab }),
 
-  // ── Calculation helper ─────────────────────────────────────────────────────
-  calculateStats: (products, orders, users, deposits) => {
+  // ── Calculation helper (100% from actual database rows) ────────────────────
+  calculateStats: (products = [], orders = [], users = [], deposits = [], visits = []) => {
     const totalUsers = users.length
     const totalProducts = products.length
     const totalOrders = orders.length
@@ -75,6 +82,16 @@ export const useAdminStore = create((set, get) => ({
     const pendingDeposits = deposits.filter(d => d.status === 'pending' && d.type === 'credit').length
     const activeRestrictions = users.filter(u => u.status === 'restricted' || u.status === 'banned').length
 
+    // Visitor metrics
+    const totalVisits = visits.length
+    const uniqueVisitors = new Set(visits.map(v => v.ip_address).filter(Boolean)).size
+    const activeVisitorsNow = visits.filter(v => {
+      if (!v.created_at) return false
+      return Date.now() - new Date(v.created_at).getTime() < 10 * 60 * 1000 // past 10 minutes
+    }).length
+    const mobileVisitsCount = visits.filter(v => v.device_type === 'mobile').length
+    const desktopVisitsCount = visits.filter(v => v.device_type === 'desktop').length
+
     return {
       totalUsers,
       totalProducts,
@@ -85,56 +102,40 @@ export const useAdminStore = create((set, get) => ({
       lowStock,
       outOfStock,
       pendingDeposits,
-      activeRestrictions
+      activeRestrictions,
+      totalVisits,
+      uniqueVisitors,
+      activeVisitorsNow,
+      mobileVisitsCount,
+      desktopVisitsCount
     }
   },
 
-  // ── Initial Fetch from Supabase ────────────────────────────────────────────
+  // ── Initial Fetch from Supabase (Pure real data from DB) ───────────────────
   fetchDashboardData: async () => {
     set({ isLoading: true })
     try {
-      console.log('[useAdminStore] Fetching complete app data from Supabase...')
-      const [productsRes, ordersRes, profilesRes, transRes] = await Promise.all([
+      console.log('[useAdminStore] Fetching real database records from Supabase...')
+      const [productsRes, ordersRes, profilesRes, transRes, visitsRes] = await Promise.all([
         getProducts({ includeAllStatus: true, limit: 100 }),
         getOrders(),
         getProfiles(),
-        getTransactions()
+        getTransactions(),
+        getSiteVisits({ limit: 200 })
       ])
 
-      let loadedProducts = productsRes.data || []
-      let loadedOrders = ordersRes.data || []
-      let loadedUsers = profilesRes.data || []
-      let loadedDeposits = transRes.data || []
-
-      // If database is completely brand new and empty, provide CarryGo initial set
-      if (loadedProducts.length === 0) {
-        console.log('[useAdminStore] Database products table is empty. Initializing starter catalog...')
-        loadedProducts = CARRYGO_STARTER_PRODUCTS.map((p, idx) => ({
-          ...p,
-          id: `cgo-prod-${idx + 1}`,
-          created_at: new Date(Date.now() - idx * 3600000).toISOString()
-        }))
-      }
-
-      // If users table is empty, include a seed admin user representation
-      if (loadedUsers.length === 0) {
-        loadedUsers = [
-          {
-            id: 'admin-seed-1',
-            full_name: 'CarryGo Administrator',
-            email: 'admin@carrygoexpress.com',
-            role: 'admin',
-            status: 'active',
-            created_at: new Date().toISOString()
-          }
-        ]
-      }
+      const loadedProducts = productsRes.data || []
+      const loadedOrders = ordersRes.data || []
+      const loadedUsers = profilesRes.data || []
+      const loadedDeposits = transRes.data || []
+      const loadedVisits = visitsRes.data || []
 
       const calculatedStats = get().calculateStats(
         loadedProducts,
         loadedOrders,
         loadedUsers,
-        loadedDeposits
+        loadedDeposits,
+        loadedVisits
       )
 
       set({
@@ -142,12 +143,13 @@ export const useAdminStore = create((set, get) => ({
         orders: loadedOrders,
         users: loadedUsers,
         deposits: loadedDeposits,
+        visits: loadedVisits,
         stats: calculatedStats,
         isLoading: false,
         lastSyncTime: new Date()
       })
 
-      console.log('[useAdminStore] App data successfully synchronized with Supabase.')
+      console.log('[useAdminStore] Real app data synchronized with Supabase.')
     } catch (err) {
       console.error('[useAdminStore] Data sync error:', err)
       set({ isLoading: false })
@@ -280,8 +282,32 @@ export const useAdminStore = create((set, get) => ({
             newDeposits = newDeposits.map(d => d.id === payload.new.id ? payload.new : d)
           }
 
-          const stats = state.calculateStats(state.products, state.orders, state.users, newDeposits)
+          const stats = state.calculateStats(state.products, state.orders, state.users, newDeposits, state.visits)
           set({ deposits: newDeposits, stats, lastSyncTime: new Date() })
+        }
+      )
+      // 5. Live Site Visits (User traffic & IP tracking in real time)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'site_visits' },
+        (payload) => {
+          console.log('[Realtime] Site Visit received:', payload.eventType, payload.new)
+          const state = get()
+          let newVisits = [...state.visits]
+
+          if (payload.eventType === 'INSERT') {
+            newVisits = [payload.new, ...newVisits].slice(0, 300)
+            state.addEvent({
+              id: payload.new.id || Date.now().toString(),
+              type: 'visit',
+              title: 'Live Visitor on Store',
+              message: `${payload.new.country_flag || '🌐'} ${payload.new.ip_address} (${payload.new.city || 'Visitor'}, ${payload.new.country || ''}) viewing ${payload.new.page_path}`,
+              timestamp: new Date()
+            })
+          }
+
+          const stats = state.calculateStats(state.products, state.orders, state.users, state.deposits, newVisits)
+          set({ visits: newVisits, stats, lastSyncTime: new Date() })
         }
       )
       .subscribe((status) => {

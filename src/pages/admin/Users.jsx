@@ -120,9 +120,10 @@ export default function AdminUsers() {
         </div>
       </div>
 
-      {/* Users Table */}
+      {/* Users Container (Desktop Table + Mobile Cards) */}
       <div className="bg-veltrix-black-light rounded-2xl border border-veltrix-gray-800/60 overflow-hidden shadow-xl">
-        <div className="overflow-x-auto">
+        {/* Desktop View */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
               <tr className="border-b border-veltrix-gray-800 text-veltrix-gray-500 uppercase tracking-wider pb-3">
@@ -232,12 +233,88 @@ export default function AdminUsers() {
               ))}
             </tbody>
           </table>
-          {filteredUsers.length === 0 && (
-            <div className="p-12 text-center text-veltrix-gray-500">
-              No registered users found.
-            </div>
-          )}
         </div>
+
+        {/* Mobile View */}
+        <div className="md:hidden divide-y divide-veltrix-gray-800/60">
+          {filteredUsers.map((user) => (
+            <div key={user.id} className="p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-veltrix-blue/20 to-purple-500/20 text-veltrix-blue flex items-center justify-center font-bold text-xs border border-veltrix-blue/30 shrink-0">
+                    {(user.full_name || user.email || 'U').charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <p className="font-bold text-white text-sm">{user.full_name || 'Customer'}</p>
+                    <p className="text-[11px] text-veltrix-gray-400 font-mono truncate max-w-[180px]">{user.email || 'N/A'}</p>
+                  </div>
+                </div>
+                <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold border ${getStatusColor(user.status || 'active')}`}>
+                  {user.status || 'active'}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 p-2.5 bg-veltrix-black/50 rounded-xl border border-veltrix-gray-800/40 text-xs">
+                <div>
+                  <span className="text-[10px] text-veltrix-gray-500 block uppercase">Role</span>
+                  <span className="font-semibold text-white capitalize">{user.role || 'customer'}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-veltrix-gray-500 block uppercase">Orders Placed</span>
+                  <span className="font-bold text-white">{user.orderCount} orders</span>
+                </div>
+                <div className="col-span-2 pt-1 border-t border-veltrix-gray-800/40 flex justify-between items-center">
+                  <span className="text-[10px] text-veltrix-gray-500 uppercase">Total Lifetime Spend</span>
+                  <span className="font-black text-veltrix-blue text-sm">{formatPrice(user.totalSpent)}</span>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between pt-1">
+                <span className="text-[10px] text-veltrix-gray-500 font-mono">
+                  Joined: {user.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A'}
+                </span>
+                <div className="flex items-center gap-2">
+                  {user.role === 'admin' ? (
+                    <button
+                      onClick={() => changeUserRole(user.id, 'customer')}
+                      className="px-2.5 py-1 text-xs border border-veltrix-gray-700 text-veltrix-gray-300 rounded-lg"
+                    >
+                      Demote
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => changeUserRole(user.id, 'admin')}
+                      className="px-2.5 py-1 text-xs bg-purple-500/20 text-purple-300 border border-purple-500/30 rounded-lg font-semibold"
+                    >
+                      Make Admin
+                    </button>
+                  )}
+                  {user.status === 'restricted' ? (
+                    <button
+                      onClick={() => changeUserStatus(user.id, 'active')}
+                      className="px-2.5 py-1 text-xs bg-green-500/20 text-green-300 border border-green-500/30 rounded-lg"
+                    >
+                      Unrestrict
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => changeUserStatus(user.id, 'restricted')}
+                      className="px-2.5 py-1 text-xs bg-red-500/20 text-red-300 border border-red-500/30 rounded-lg"
+                    >
+                      Restrict
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {filteredUsers.length === 0 && (
+          <div className="p-12 text-center text-veltrix-gray-500">
+            No registered users found.
+          </div>
+        )}
       </div>
     </div>
   )

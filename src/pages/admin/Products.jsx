@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { 
   Search, Plus, Edit, Trash2, Eye, Package, AlertTriangle, 
-  CheckCircle, XCircle, RefreshCw, Sparkles, ArrowUpDown
+  CheckCircle, XCircle, RefreshCw, Sparkles, ArrowUpDown,
+  Upload, Image as ImageIcon, Loader2
 } from 'lucide-react'
 import { useAdminStore } from '../../hooks/useAdminStore'
+import { uploadProductImage } from '../../lib/supabase'
 import { formatPrice } from '../../lib/utils'
 
 export default function AdminProducts() {
@@ -23,6 +25,8 @@ export default function AdminProducts() {
   const [showModal, setShowModal] = useState(false)
   const [editingProduct, setEditingProduct] = useState(null)
   const [submitting, setSubmitting] = useState(false)
+  const [uploadingImage, setUploadingImage] = useState(false)
+  const [uploadError, setUploadError] = useState(null)
 
   // Form state
   const [form, setForm] = useState({
@@ -82,7 +86,23 @@ export default function AdminProducts() {
       badge: product.badge || '',
       description: product.description || ''
     })
+    setUploadError(null)
     setShowModal(true)
+  }
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploadingImage(true)
+    setUploadError(null)
+
+    const { url, error } = await uploadProductImage(file)
+    if (error) {
+      setUploadError(error)
+    } else if (url) {
+      setForm(prev => ({ ...prev, image: url }))
+    }
+    setUploadingImage(false)
   }
 
   const handleSubmit = async (e) => {
@@ -229,9 +249,10 @@ export default function AdminProducts() {
         </div>
       </div>
 
-      {/* Products Table */}
+      {/* Products Table (Desktop) & Cards (Mobile) */}
       <div className="bg-veltrix-black-light rounded-2xl border border-veltrix-gray-800/60 overflow-hidden shadow-xl">
-        <div className="overflow-x-auto">
+        {/* Desktop Table View */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
               <tr className="border-b border-veltrix-gray-800 text-veltrix-gray-500 uppercase tracking-wider pb-3">
@@ -346,12 +367,84 @@ export default function AdminProducts() {
               ))}
             </tbody>
           </table>
-          {filteredProducts.length === 0 && (
-            <div className="p-12 text-center text-veltrix-gray-500">
-              No products found matching filters.
-            </div>
-          )}
         </div>
+
+        {/* Mobile Product Cards View */}
+        <div className="block md:hidden divide-y divide-veltrix-gray-800">
+          {filteredProducts.map((product) => (
+            <div key={product.id} className="p-4 space-y-3">
+              <div className="flex items-start gap-3">
+                <img 
+                  src={product.image || 'https://images.unsplash.com/photo-1593784991095-a205069470b6?w=100'} 
+                  alt={product.name} 
+                  className="w-16 h-16 object-cover rounded-xl bg-veltrix-black border border-veltrix-gray-800 shrink-0" 
+                />
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-white text-sm truncate">{product.name}</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="px-2 py-0.5 bg-veltrix-gray-800 text-[10px] text-veltrix-gray-300 rounded font-medium">
+                      {product.category}
+                    </span>
+                    <span className="text-[10px] font-mono text-veltrix-gray-500">{product.sku}</span>
+                  </div>
+                  <p className="font-black text-white text-sm mt-1">{formatPrice(product.price)}</p>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between pt-1 text-xs">
+                {/* Stock Controls */}
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] text-veltrix-gray-400">Stock:</span>
+                  <button
+                    onClick={() => adjustStock(product.id, -1)}
+                    className="w-7 h-7 bg-veltrix-black border border-veltrix-gray-700 rounded-lg flex items-center justify-center text-white"
+                  >
+                    -
+                  </button>
+                  <span className="font-mono font-bold text-white px-1">
+                    {product.stock ?? 10}
+                  </span>
+                  <button
+                    onClick={() => adjustStock(product.id, 1)}
+                    className="w-7 h-7 bg-veltrix-black border border-veltrix-gray-700 rounded-lg flex items-center justify-center text-white"
+                  >
+                    +
+                  </button>
+                </div>
+
+                {/* Status Toggle */}
+                <button
+                  onClick={() => toggleStatus(product)}
+                  className={`px-2.5 py-1 rounded-full text-[10px] font-bold border ${getStatusColor(product.status)}`}
+                >
+                  {product.status}
+                </button>
+
+                {/* Actions */}
+                <div className="flex items-center gap-1">
+                  <button 
+                    onClick={() => openEditModal(product)}
+                    className="p-1.5 text-veltrix-gray-400 hover:text-white rounded"
+                  >
+                    <Edit className="w-4 h-4" />
+                  </button>
+                  <button 
+                    onClick={() => handleDelete(product.id, product.name)}
+                    className="p-1.5 text-veltrix-gray-400 hover:text-red-400 rounded"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {filteredProducts.length === 0 && (
+          <div className="p-12 text-center text-veltrix-gray-500">
+            No products found matching filters.
+          </div>
+        )}
       </div>
 
       {/* Add / Edit Product Modal */}
@@ -464,15 +557,52 @@ export default function AdminProducts() {
                 </div>
               </div>
 
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-veltrix-gray-300">Image URL</label>
-                <input
-                  type="url"
-                  value={form.image}
-                  onChange={e => setForm({ ...form, image: e.target.value })}
-                  className="input-field text-sm"
-                  placeholder="https://images.unsplash.com/..."
-                />
+              {/* Supabase Storage File Upload & URL Field */}
+              <div className="space-y-2 pt-2">
+                <label className="text-xs font-semibold text-veltrix-gray-300 flex items-center justify-between">
+                  <span>Product Image (Supabase Storage or Web URL)</span>
+                  {uploadingImage && <span className="text-veltrix-blue flex items-center gap-1 text-[11px]"><Loader2 className="w-3 h-3 animate-spin" /> Uploading to Supabase...</span>}
+                </label>
+
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <input
+                    type="text"
+                    value={form.image}
+                    onChange={e => setForm({ ...form, image: e.target.value })}
+                    className="input-field text-xs flex-1"
+                    placeholder="https://... or upload image file directly"
+                  />
+
+                  <label className="px-4 py-2.5 bg-veltrix-gray-800 hover:bg-veltrix-blue hover:text-black rounded-xl text-xs font-bold cursor-pointer transition-colors flex items-center justify-center gap-1.5 shrink-0 border border-veltrix-gray-700">
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>Upload Image</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      disabled={uploadingImage}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+
+                {uploadError && (
+                  <p className="text-xs text-red-400">{uploadError}</p>
+                )}
+
+                {form.image && (
+                  <div className="flex items-center gap-3 p-2 bg-veltrix-black rounded-xl border border-veltrix-gray-800">
+                    <img 
+                      src={form.image} 
+                      alt="Product preview" 
+                      className="w-14 h-14 object-cover rounded-lg border border-veltrix-gray-700" 
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[11px] font-semibold text-white truncate">{form.image}</p>
+                      <p className="text-[10px] text-green-400">Live preview ready</p>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="space-y-1">

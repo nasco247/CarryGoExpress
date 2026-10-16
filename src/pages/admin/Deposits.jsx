@@ -123,9 +123,10 @@ export default function AdminDeposits() {
         </div>
       </div>
 
-      {/* Table */}
+      {/* Transactions Container (Desktop Table + Mobile Cards) */}
       <div className="bg-veltrix-black-light rounded-2xl border border-veltrix-gray-800/60 overflow-hidden shadow-xl">
-        <div className="overflow-x-auto">
+        {/* Desktop View */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
               <tr className="border-b border-veltrix-gray-800 text-veltrix-gray-500 uppercase tracking-wider pb-3">
@@ -195,12 +196,64 @@ export default function AdminDeposits() {
               ))}
             </tbody>
           </table>
-          {filteredDeposits.length === 0 && (
-            <div className="p-12 text-center text-veltrix-gray-500">
-              No transactions recorded yet.
-            </div>
-          )}
         </div>
+
+        {/* Mobile View */}
+        <div className="md:hidden divide-y divide-veltrix-gray-800/60">
+          {filteredDeposits.map((dep) => (
+            <div key={dep.id} className="p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="font-mono text-xs font-bold text-veltrix-blue">
+                  {dep.reference || `#${(dep.id || '').slice(0, 8)}`}
+                </span>
+                <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${getStatusColor(dep.status)}`}>
+                  {dep.status}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-semibold text-white text-xs">{dep.email || 'CarryGo Customer'}</p>
+                  <p className="text-[11px] text-veltrix-gray-400 mt-0.5">{dep.description || 'Wallet transaction'}</p>
+                </div>
+                <div className="text-right">
+                  <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold mb-1 ${
+                    dep.type === 'credit' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
+                  }`}>
+                    {dep.type === 'credit' ? 'Credit' : 'Debit'}
+                  </span>
+                  <p className="font-black text-white text-sm">{formatPrice(dep.amount)}</p>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between pt-1 border-t border-veltrix-gray-800/40 text-[11px] text-veltrix-gray-500">
+                <span>{dep.created_at ? new Date(dep.created_at).toLocaleDateString() : 'Recent'}</span>
+                {dep.status === 'pending' && (
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleApprove(dep.id)}
+                      className="px-3 py-1 bg-green-500 text-white rounded-lg font-bold text-xs"
+                    >
+                      Approve
+                    </button>
+                    <button
+                      onClick={() => handleReject(dep.id)}
+                      className="px-3 py-1 border border-red-500/40 text-red-400 rounded-lg text-xs"
+                    >
+                      Reject
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {filteredDeposits.length === 0 && (
+          <div className="p-12 text-center text-veltrix-gray-500">
+            No transactions recorded yet.
+          </div>
+        )}
       </div>
     </div>
   )

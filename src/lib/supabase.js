@@ -438,3 +438,81 @@ export const seedInitialProducts = async () => {
     return { error: err.message, seeded: false }
   }
 }
+
+// ── Supabase Storage API ───────────────────────────────────────────────────
+export const uploadProductImage = async (file) => {
+  try {
+    const fileExt = file.name.split('.').pop()
+    const fileName = `product-${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`
+    const filePath = `items/${fileName}`
+
+    const { error: uploadError } = await supabase.storage
+      .from('products')
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: false
+      })
+
+    if (uploadError) throw uploadError
+
+    const { data: publicUrlData } = supabase.storage
+      .from('products')
+      .getPublicUrl(filePath)
+
+    return { url: publicUrlData.publicUrl, path: filePath, error: null }
+  } catch (error) {
+    console.error('[Supabase Storage] Upload error:', error)
+    return { url: null, path: null, error: error.message }
+  }
+}
+
+// ── Site Visits & Traffic Tracking API ──────────────────────────────────────
+export const recordSiteVisit = async (visitData = {}) => {
+  try {
+    const { data, error } = await supabase
+      .from('site_visits')
+      .insert({
+        ip_address: visitData.ip || '127.0.0.1',
+        city: visitData.city || 'Unknown',
+        region: visitData.region || 'Unknown',
+        country: visitData.country || 'Unknown',
+        country_code: visitData.country_code || '',
+        country_flag: visitData.country_flag || '🌐',
+        page_path: visitData.page_path || window.location.pathname,
+        page_title: visitData.page_title || document.title,
+        referrer: visitData.referrer || document.referrer || 'Direct',
+        user_agent: visitData.user_agent || navigator.userAgent,
+        browser: visitData.browser || 'Unknown',
+        os: visitData.os || 'Unknown',
+        device_type: visitData.device_type || 'desktop',
+        screen_resolution: visitData.screen_resolution || `${window.screen.width}x${window.screen.height}`,
+        session_id: visitData.session_id || 'anonymous',
+        user_id: visitData.user_id || null,
+        user_email: visitData.user_email || null,
+      })
+      .select()
+      .single()
+
+    return { data, error }
+  } catch (err) {
+    return { data: null, error: err.message }
+  }
+}
+
+export const getSiteVisits = async (options = {}) => {
+  try {
+    let query = supabase
+      .from('site_visits')
+      .select('*')
+      .order('created_at', { ascending: false })
+
+    if (options.limit) {
+      query = query.limit(options.limit)
+    }
+
+    const { data, error } = await query
+    return { data: data || [], error }
+  } catch (err) {
+    return { data: [], error: err.message }
+  }
+}

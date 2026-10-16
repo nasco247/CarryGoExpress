@@ -135,6 +135,33 @@ CREATE TABLE IF NOT EXISTS public.app_events (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- ── 8. Site Visits & Realtime Traffic Tracking ──────────────
+CREATE TABLE IF NOT EXISTS public.site_visits (
+  id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  ip_address        TEXT,
+  city              TEXT,
+  region            TEXT,
+  country           TEXT,
+  country_code      TEXT,
+  country_flag      TEXT,
+  page_path         TEXT NOT NULL,
+  page_title        TEXT,
+  referrer          TEXT,
+  user_agent        TEXT,
+  browser           TEXT,
+  os                TEXT,
+  device_type       TEXT DEFAULT 'desktop', -- 'desktop', 'mobile', 'tablet'
+  screen_resolution TEXT,
+  session_id        TEXT,
+  user_id           UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  user_email        TEXT,
+  created_at        TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_site_visits_created_at ON public.site_visits (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_site_visits_ip ON public.site_visits (ip_address);
+CREATE INDEX IF NOT EXISTS idx_site_visits_path ON public.site_visits (page_path);
+
 -- ============================================================
 -- Row Level Security (RLS) Configuration
 -- Designed for seamless User-end and Admin-end operation
@@ -146,6 +173,7 @@ ALTER TABLE public.order_items  ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.transactions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.carts        ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.app_events   ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.site_visits  ENABLE ROW LEVEL SECURITY;
 
 -- Helper function to check if current user is admin
 CREATE OR REPLACE FUNCTION public.is_admin()
@@ -216,6 +244,16 @@ DROP POLICY IF EXISTS "app_events_policy" ON public.app_events;
 CREATE POLICY "app_events_policy" ON public.app_events
   FOR ALL USING (true) WITH CHECK (true);
 
+-- ── Site Visits policies (Anyone can insert visit, Admin can view) ──
+DROP POLICY IF EXISTS "site_visits_insert" ON public.site_visits;
+DROP POLICY IF EXISTS "site_visits_select" ON public.site_visits;
+
+CREATE POLICY "site_visits_insert" ON public.site_visits
+  FOR INSERT WITH CHECK (true);
+
+CREATE POLICY "site_visits_select" ON public.site_visits
+  FOR SELECT USING (public.is_admin() OR auth.role() = 'authenticated');
+
 -- ============================================================
 -- Enable Supabase Realtime for instant live tracking
 -- ============================================================
@@ -249,6 +287,39 @@ BEGIN
 
   BEGIN
     ALTER PUBLICATION supabase_realtime ADD TABLE public.app_events;
+  EXCEPTION WHEN duplicate_object THEN NULL;
+  END;
+
+  BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.site_visits;
+  EXCEPTION WHEN duplicate_object THEN NULL;
+  END;
+END $$;
+
+-- ============================================================
+-- Storage Buckets Setup (Public 'products' bucket)
+-- ============================================================
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('products', 'products', true)
+ON CONFLICT (id) DO UPDATE SET public = true;
+
+DO $$
+BEGIN
+  BEGIN
+    CREATE POLICY "Public Read Products Storage" ON storage.objects
+      FOR SELECT USING (bucket_id = 'products');
+  EXCEPTION WHEN duplicate_object THEN NULL;
+  END;
+
+  BEGIN
+    CREATE POLICY "Allow Upload to Products Storage" ON storage.objects
+      FOR INSERT WITH CHECK (bucket_id = 'products');
+  EXCEPTION WHEN duplicate_object THEN NULL;
+  END;
+
+  BEGIN
+    CREATE POLICY "Allow Modify Products Storage" ON storage.objects
+      FOR ALL USING (bucket_id = 'products');
   EXCEPTION WHEN duplicate_object THEN NULL;
   END;
 END $$;

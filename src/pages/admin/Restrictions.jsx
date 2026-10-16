@@ -60,12 +60,14 @@ export default function AdminRestrictions() {
         ))}
       </div>
 
-      {/* Restricted List */}
+      {/* Restricted List Container (Desktop Table + Mobile Cards) */}
       <div className="bg-veltrix-black-light rounded-2xl border border-veltrix-gray-800/60 overflow-hidden shadow-xl">
         <div className="p-4 border-b border-veltrix-gray-800">
           <h2 className="text-sm font-bold text-white">Restricted Customer Accounts</h2>
         </div>
-        <div className="overflow-x-auto">
+
+        {/* Desktop View */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
               <tr className="border-b border-veltrix-gray-800 text-veltrix-gray-500 uppercase tracking-wider pb-3">
@@ -102,13 +104,40 @@ export default function AdminRestrictions() {
               ))}
             </tbody>
           </table>
-          {restrictedUsers.length === 0 && (
-            <div className="p-12 text-center text-xs text-veltrix-gray-500">
-              <CheckCircle className="w-8 h-8 text-green-400 mx-auto mb-2" />
-              No customer accounts are currently restricted.
-            </div>
-          )}
         </div>
+
+        {/* Mobile View */}
+        <div className="md:hidden divide-y divide-veltrix-gray-800/60">
+          {restrictedUsers.map((user) => (
+            <div key={user.id} className="p-4 space-y-2">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-bold text-white text-sm">{user.full_name || 'Customer'}</p>
+                  <p className="text-xs text-veltrix-gray-400 font-mono">{user.email || 'N/A'}</p>
+                </div>
+                <span className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-red-500/20 text-red-400 border border-red-500/30">
+                  {user.status || 'restricted'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between pt-2">
+                <span className="text-[10px] text-veltrix-gray-500 font-mono">ID: {(user.id || '').slice(0, 10)}</span>
+                <button
+                  onClick={() => handleLift(user.id)}
+                  className="px-3 py-1 bg-green-500/20 text-green-400 border border-green-500/30 font-semibold rounded-lg text-xs"
+                >
+                  Lift Restriction
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {restrictedUsers.length === 0 && (
+          <div className="p-12 text-center text-xs text-veltrix-gray-500">
+            <CheckCircle className="w-8 h-8 text-green-400 mx-auto mb-2" />
+            No customer accounts are currently restricted.
+          </div>
+        )}
       </div>
 
       {/* Restrict Modal */}

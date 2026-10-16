@@ -118,9 +118,10 @@ export default function AdminOrders() {
         </select>
       </div>
 
-      {/* Orders Table */}
+      {/* Orders Container (Desktop Table + Mobile Cards) */}
       <div className="bg-veltrix-black-light rounded-2xl border border-veltrix-gray-800/60 overflow-hidden shadow-xl">
-        <div className="overflow-x-auto">
+        {/* Desktop View */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
               <tr className="border-b border-veltrix-gray-800 text-veltrix-gray-500 uppercase tracking-wider pb-3">
@@ -205,12 +206,84 @@ export default function AdminOrders() {
               ))}
             </tbody>
           </table>
-          {filteredOrders.length === 0 && (
-            <div className="p-12 text-center text-veltrix-gray-500">
-              No orders found matching filters.
-            </div>
-          )}
         </div>
+
+        {/* Mobile Cards Stack View */}
+        <div className="md:hidden divide-y divide-veltrix-gray-800/60">
+          {filteredOrders.map((order) => (
+            <div key={order.id} className="p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="font-mono text-xs font-bold text-veltrix-blue">
+                  #{(order.id || '').slice(0, 8)}
+                </span>
+                <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${getStatusColor(order.status)}`}>
+                  {order.status === 'completed' && <CheckCircle className="w-3 h-3" />}
+                  {order.status === 'pending' && <Clock className="w-3 h-3" />}
+                  {order.status === 'processing' && <Truck className="w-3 h-3" />}
+                  {order.status === 'cancelled' && <XCircle className="w-3 h-3" />}
+                  {order.status}
+                </span>
+              </div>
+
+              <div>
+                <p className="font-bold text-white text-sm">{order.customer_name || 'CarryGo Customer'}</p>
+                <p className="text-xs text-veltrix-gray-500">{order.customer_email || 'Verified user'}</p>
+              </div>
+
+              <div className="flex items-center justify-between pt-1">
+                <div>
+                  <p className="text-[10px] text-veltrix-gray-500 uppercase tracking-wider">Total</p>
+                  <p className="font-black text-white text-base">{formatPrice(order.total_amount)}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[10px] text-veltrix-gray-500 uppercase tracking-wider">Payment</p>
+                  <span className={`text-xs font-semibold ${order.payment_status === 'paid' ? 'text-green-400' : 'text-yellow-400'}`}>
+                    {order.payment_status || 'paid'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between gap-2 pt-2 border-t border-veltrix-gray-800/40">
+                <span className="text-[11px] text-veltrix-gray-500">
+                  {order.created_at ? new Date(order.created_at).toLocaleDateString() : 'Recent'}
+                </span>
+
+                <div className="flex items-center gap-2">
+                  {order.status === 'pending' && (
+                    <button
+                      onClick={() => handleStatusChange(order.id, 'processing')}
+                      disabled={updatingId === order.id}
+                      className="px-3 py-1.5 bg-veltrix-blue text-veltrix-black font-bold rounded-lg text-xs"
+                    >
+                      Confirm
+                    </button>
+                  )}
+                  {order.status === 'processing' && (
+                    <button
+                      onClick={() => handleStatusChange(order.id, 'completed', 'paid')}
+                      disabled={updatingId === order.id}
+                      className="px-3 py-1.5 bg-green-500 text-white font-bold rounded-lg text-xs"
+                    >
+                      Delivered
+                    </button>
+                  )}
+                  <button 
+                    onClick={() => setSelectedOrder(order)}
+                    className="p-1.5 px-3 text-xs font-semibold text-veltrix-blue bg-veltrix-blue/10 border border-veltrix-blue/20 rounded-lg flex items-center gap-1.5"
+                  >
+                    <Eye className="w-3.5 h-3.5" /> Details
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {filteredOrders.length === 0 && (
+          <div className="p-12 text-center text-veltrix-gray-500">
+            No orders found matching filters.
+          </div>
+        )}
       </div>
 
       {/* Order Detail Modal */}

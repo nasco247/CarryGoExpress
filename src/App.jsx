@@ -33,6 +33,8 @@ import AdminDeposits from './pages/admin/Deposits'
 import AdminRestrictions from './pages/admin/Restrictions'
 import AdminNotifications from './pages/admin/Notifications'
 import AdminSettings from './pages/admin/Settings'
+import AdminVisitors from './pages/admin/Visitors'
+import VisitorTracker from './components/VisitorTracker'
 
 // ── Shared Layout Wrapper ────────────────────────────────────────────────────
 // Wraps all public-facing pages with Navbar, CartSidebar, main content, Footer
@@ -85,121 +87,125 @@ export default function App() {
   }, [initialize])
 
   return (
-    <Routes>
-      {/* ── Public Routes ── */}
-      <Route path="/" element={
-        <MainLayout>
-          <Home />
-        </MainLayout>
-      } />
-
-      <Route path="/product/:id" element={
-        <MainLayout>
-          <ProductDetail />
-        </MainLayout>
-      } />
-
-      <Route path="/login" element={
-        <MainLayout>
-          <Login />
-        </MainLayout>
-      } />
-
-      <Route path="/register" element={
-        <MainLayout>
-          <Register />
-        </MainLayout>
-      } />
-
-      <Route path="/category/:category" element={
-        <MainLayout>
-          <CategoryPage />
-        </MainLayout>
-      } />
-
-      <Route path="/search" element={
-        <MainLayout>
-          <Home />
-        </MainLayout>
-      } />
-
-      <Route path="/brand/:brand" element={
-        <MainLayout>
-          <CategoryPage />
-        </MainLayout>
-      } />
-
-      {/* ── Static Pages ── */}
-      <Route path="/deals" element={<MainLayout><Deals /></MainLayout>} />
-      <Route path="/new-arrivals" element={<MainLayout><Deals /></MainLayout>} />
-      
-      <Route path="/about-us" element={<MainLayout><AboutUs /></MainLayout>} />
-      <Route path="/our-stores" element={<MainLayout><OurStores /></MainLayout>} />
-      <Route path="/careers" element={<MainLayout><Careers /></MainLayout>} />
-      <Route path="/blog" element={<MainLayout><Blog /></MainLayout>} />
-      <Route path="/contact" element={<MainLayout><Contact /></MainLayout>} />
-      <Route path="/privacy" element={<MainLayout><PrivacyPolicy /></MainLayout>} />
-      <Route path="/terms" element={<MainLayout><TermsOfService /></MainLayout>} />
-
-      {/* ── Protected User Routes ── */}
-      <Route path="/profile" element={
-        <ProtectedRoute>
+    <>
+      <VisitorTracker />
+      <Routes>
+        {/* ── Public Routes ── */}
+        <Route path="/" element={
           <MainLayout>
-            <Profile />
+            <Home />
           </MainLayout>
-        </ProtectedRoute>
-      } />
+        } />
 
-      <Route path="/orders" element={
-        <ProtectedRoute>
+        <Route path="/product/:id" element={
           <MainLayout>
-            <MyOrders />
+            <ProductDetail />
           </MainLayout>
-        </ProtectedRoute>
-      } />
+        } />
 
-      <Route path="/transactions" element={
-        <ProtectedRoute>
+        <Route path="/login" element={
           <MainLayout>
-            <Transactions />
+            <Login />
           </MainLayout>
-        </ProtectedRoute>
-      } />
+        } />
 
-      <Route path="/deposit" element={
-        <ProtectedRoute>
+        <Route path="/register" element={
           <MainLayout>
-            <Deposit />
+            <Register />
           </MainLayout>
-        </ProtectedRoute>
-      } />
+        } />
 
-      <Route path="/checkout" element={
-        <ProtectedRoute>
+        <Route path="/category/:category" element={
           <MainLayout>
-            <Checkout />
+            <CategoryPage />
           </MainLayout>
-        </ProtectedRoute>
-      } />
+        } />
 
-      {/* ── Admin Routes ── */}
-      <Route path="/admin" element={
-        <ProtectedRoute requireAdmin={true}>
-          <AdminLayout />
-        </ProtectedRoute>
-      }>
-        <Route index element={<AdminDashboard />} />
-        <Route path="users" element={<AdminUsers />} />
-        <Route path="products" element={<AdminProducts />} />
-        <Route path="orders" element={<AdminOrders />} />
-        <Route path="deposits" element={<AdminDeposits />} />
-        <Route path="restrictions" element={<AdminRestrictions />} />
-        <Route path="notifications" element={<AdminNotifications />} />
-        <Route path="settings" element={<AdminSettings />} />
-      </Route>
+        <Route path="/search" element={
+          <MainLayout>
+            <Home />
+          </MainLayout>
+        } />
 
-      {/* ── Fallback ── */}
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+        <Route path="/brand/:brand" element={
+          <MainLayout>
+            <CategoryPage />
+          </MainLayout>
+        } />
+
+        {/* ── Static Pages ── */}
+        <Route path="/deals" element={<MainLayout><Deals /></MainLayout>} />
+        <Route path="/new-arrivals" element={<MainLayout><Deals /></MainLayout>} />
+        
+        <Route path="/about-us" element={<MainLayout><AboutUs /></MainLayout>} />
+        <Route path="/our-stores" element={<MainLayout><OurStores /></MainLayout>} />
+        <Route path="/careers" element={<MainLayout><Careers /></MainLayout>} />
+        <Route path="/blog" element={<MainLayout><Blog /></MainLayout>} />
+        <Route path="/contact" element={<MainLayout><Contact /></MainLayout>} />
+        <Route path="/privacy" element={<MainLayout><PrivacyPolicy /></MainLayout>} />
+        <Route path="/terms" element={<MainLayout><TermsOfService /></MainLayout>} />
+
+        {/* ── Protected User Routes ── */}
+        <Route path="/profile" element={
+          <ProtectedRoute>
+            <MainLayout>
+              <Profile />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/orders" element={
+          <ProtectedRoute>
+            <MainLayout>
+              <MyOrders />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/transactions" element={
+          <ProtectedRoute>
+            <MainLayout>
+              <Transactions />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/deposit" element={
+          <ProtectedRoute>
+            <MainLayout>
+              <Deposit />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/checkout" element={
+          <ProtectedRoute>
+            <MainLayout>
+              <Checkout />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+
+        {/* ── Admin Routes ── */}
+        <Route path="/admin" element={
+          <ProtectedRoute requireAdmin={true}>
+            <AdminLayout />
+          </ProtectedRoute>
+        }>
+          <Route index element={<AdminDashboard />} />
+          <Route path="users" element={<AdminUsers />} />
+          <Route path="products" element={<AdminProducts />} />
+          <Route path="visitors" element={<AdminVisitors />} />
+          <Route path="orders" element={<AdminOrders />} />
+          <Route path="deposits" element={<AdminDeposits />} />
+          <Route path="restrictions" element={<AdminRestrictions />} />
+          <Route path="notifications" element={<AdminNotifications />} />
+          <Route path="settings" element={<AdminSettings />} />
+        </Route>
+
+        {/* ── Fallback ── */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </>
   )
 }

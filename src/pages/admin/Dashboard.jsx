@@ -2,8 +2,8 @@ import { useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { 
   Users, Package, ShoppingCart, CreditCard, TrendingUp, 
-  ArrowUpRight, AlertTriangle, CheckCircle,
-  Clock, Radio, RefreshCw, Sparkles, Plus, Eye, Check, X
+  ArrowUpRight, AlertTriangle, CheckCircle, Globe,
+  Clock, Radio, RefreshCw, Sparkles, Plus, Eye, Check, X, Shield, Activity
 } from 'lucide-react'
 import { useAdminStore } from '../../hooks/useAdminStore'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
@@ -15,6 +15,7 @@ export default function AdminDashboard() {
     orders, 
     users, 
     products, 
+    visits,
     liveEvents, 
     realtimeConnected, 
     fetchDashboardData, 
@@ -31,7 +32,7 @@ export default function AdminDashboard() {
     setSeeding(false)
   }
 
-  // Derive dynamic monthly chart data from real orders
+  // Derive dynamic monthly chart data exclusively from real orders
   const chartData = useMemo(() => {
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
     const currentMonthIdx = new Date().getMonth()
@@ -54,21 +55,8 @@ export default function AdminDashboard() {
       }
     })
 
-    // If no historical orders, provide smooth demonstration baseline curve
-    const hasData = baseWindow.some(b => b.sales > 0 || b.orders > 0)
-    if (!hasData) {
-      return [
-        { name: 'May', sales: 450000, orders: 4 },
-        { name: 'Jun', sales: 780000, orders: 7 },
-        { name: 'Jul', sales: 1250000, orders: 12 },
-        { name: 'Aug', sales: 1890000, orders: 15 },
-        { name: 'Sep', sales: 2450000, orders: 22 },
-        { name: 'Oct', sales: stats.totalRevenue || 3100000, orders: stats.totalOrders || 28 },
-      ]
-    }
-
     return baseWindow
-  }, [orders, stats.totalRevenue, stats.totalOrders])
+  }, [orders])
 
   const statsCards = [
     { 
@@ -106,6 +94,15 @@ export default function AdminDashboard() {
       icon: CreditCard, 
       color: 'yellow',
       link: '/admin/deposits'
+    },
+    { 
+      title: 'Storefront Visitors', 
+      value: stats.totalVisits.toLocaleString(), 
+      change: `${stats.uniqueVisitors} unique IPs (${stats.activeVisitorsNow} live)`, 
+      trend: 'up',
+      icon: Globe, 
+      color: 'cyan',
+      link: '/admin/visitors'
     },
   ]
 
@@ -168,33 +165,37 @@ export default function AdminDashboard() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         {statsCards.map((stat, index) => {
           const Icon = stat.icon
           return (
             <Link
               key={index}
               to={stat.link}
-              className="group bg-veltrix-black-light rounded-2xl border border-veltrix-gray-800/60 p-6 hover:border-veltrix-blue/40 transition-all duration-300 shadow-lg relative overflow-hidden"
+              className="group bg-veltrix-black-light rounded-2xl border border-veltrix-gray-800/60 p-4 sm:p-5 hover:border-veltrix-blue/40 transition-all duration-300 shadow-lg relative overflow-hidden flex flex-col justify-between"
             >
-              <div className="flex items-start justify-between mb-4">
-                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+              <div className="flex items-start justify-between mb-3">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
                   stat.color === 'blue' ? 'bg-veltrix-blue/20 text-veltrix-blue' :
                   stat.color === 'green' ? 'bg-green-500/20 text-green-400' :
                   stat.color === 'purple' ? 'bg-purple-500/20 text-purple-400' :
+                  stat.color === 'cyan' ? 'bg-cyan-500/20 text-cyan-400' :
                   'bg-yellow-500/20 text-yellow-400'
                 }`}>
-                  <Icon className="w-6 h-6" />
+                  <Icon className="w-5 h-5" />
                 </div>
-                <div className="flex items-center gap-1 text-xs font-semibold text-green-400 bg-green-500/10 px-2 py-1 rounded-md">
-                  <TrendingUp className="w-3 h-3" />
-                  {stat.change}
+                <div className="hidden sm:flex items-center gap-1 text-[11px] font-semibold text-green-400 bg-green-500/10 px-2 py-0.5 rounded-md truncate max-w-[120px]">
+                  <TrendingUp className="w-3 h-3 shrink-0" />
+                  <span className="truncate">{stat.change}</span>
                 </div>
               </div>
-              <h3 className="text-2xl font-black text-white mb-1 group-hover:text-veltrix-blue transition-colors">
-                {stat.value}
-              </h3>
-              <p className="text-xs text-veltrix-gray-400 font-medium">{stat.title}</p>
+              <div>
+                <h3 className="text-xl sm:text-2xl font-black text-white mb-0.5 group-hover:text-veltrix-blue transition-colors">
+                  {stat.value}
+                </h3>
+                <p className="text-[11px] sm:text-xs text-veltrix-gray-400 font-medium">{stat.title}</p>
+                <p className="sm:hidden text-[10px] text-green-400 mt-1 font-medium truncate">{stat.change}</p>
+              </div>
             </Link>
           )
         })}

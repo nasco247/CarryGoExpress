@@ -3,7 +3,8 @@ import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
 import { 
   LayoutDashboard, Users, Package, ShoppingCart, CreditCard, 
   Ban, Bell, Settings, LogOut, Menu, X, ChevronRight,
-  TrendingUp, AlertTriangle, Shield, ExternalLink, Radio, RefreshCw
+  TrendingUp, AlertTriangle, Shield, ExternalLink, Radio, RefreshCw,
+  Globe, Activity
 } from 'lucide-react'
 import { useAdminStore } from '../../hooks/useAdminStore'
 import { signOut } from '../../lib/supabase'
@@ -12,6 +13,7 @@ const menuItems = [
   { path: '/admin', icon: LayoutDashboard, label: 'Dashboard', badge: null },
   { path: '/admin/orders', icon: ShoppingCart, label: 'Live Orders', badge: 'orders' },
   { path: '/admin/products', icon: Package, label: 'Product Inventory', badge: 'products' },
+  { path: '/admin/visitors', icon: Globe, label: 'Visitor & IP Traffic', badge: 'visitors' },
   { path: '/admin/users', icon: Users, label: 'User Accounts', badge: 'users' },
   { path: '/admin/deposits', icon: CreditCard, label: 'Deposits & Finance', badge: 'deposits' },
   { path: '/admin/restrictions', icon: Ban, label: 'Restrictions & Bans', badge: 'restrictions' },
@@ -20,7 +22,12 @@ const menuItems = [
 ]
 
 export default function AdminLayout() {
-  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth >= 1024
+    }
+    return true
+  })
   const [profileOpen, setProfileOpen] = useState(false)
   const location = useLocation()
   const navigate = useNavigate()
@@ -42,6 +49,13 @@ export default function AdminLayout() {
     }
   }, [fetchDashboardData, initRealtimeSubscription])
 
+  // Close sidebar on route change on mobile
+  useEffect(() => {
+    if (window.innerWidth < 1024) {
+      setSidebarOpen(false)
+    }
+  }, [location.pathname])
+
   const handleLogout = async () => {
     await signOut()
     navigate('/login')
@@ -54,16 +68,26 @@ export default function AdminLayout() {
       case 'products': return stats.lowStock || 0
       case 'deposits': return stats.pendingDeposits || 0
       case 'restrictions': return stats.activeRestrictions || 0
+      case 'visitors': return stats.activeVisitorsNow || 0
       case 'notifications': return notifications.filter(n => !n.read).length
       default: return 0
     }
   }
 
   return (
-    <div className="min-h-screen bg-veltrix-black text-white flex">
+    <div className="min-h-screen bg-veltrix-black text-white flex relative">
+      {/* Mobile Backdrop Overlay */}
+      {sidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/75 backdrop-blur-sm z-40 lg:hidden transition-opacity duration-300"
+          onClick={() => setSidebarOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
       {/* Sidebar */}
       <aside 
-        className={`fixed lg:static inset-y-0 left-0 z-50 bg-veltrix-black-light border-r border-veltrix-gray-800 transition-all duration-300 ${
+        className={`fixed lg:static inset-y-0 left-0 z-50 bg-veltrix-black-light border-r border-veltrix-gray-800 transition-all duration-300 shadow-2xl lg:shadow-none ${
           sidebarOpen ? 'w-72 translate-x-0' : 'w-0 -translate-x-full lg:w-20 lg:translate-x-0'
         }`}
       >
@@ -268,9 +292,67 @@ export default function AdminLayout() {
         </header>
 
         {/* Page Body */}
-        <main className="flex-1 p-4 lg:p-8 overflow-y-auto">
+        <main className="flex-1 p-4 lg:p-8 pb-24 lg:pb-8 overflow-y-auto">
           <Outlet />
         </main>
+
+        {/* Mobile Bottom Navigation Bar */}
+        <nav className="lg:hidden fixed bottom-0 left-0 right-0 h-16 bg-veltrix-black-light/95 backdrop-blur-2xl border-t border-veltrix-gray-800 z-40 flex items-center justify-around px-2 shadow-2xl">
+          <Link 
+            to="/admin" 
+            className={`flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition-all ${
+              location.pathname === '/admin' ? 'text-veltrix-blue font-bold' : 'text-veltrix-gray-400 hover:text-white'
+            }`}
+          >
+            <LayoutDashboard className="w-5 h-5" />
+            <span className="text-[10px]">Dashboard</span>
+          </Link>
+
+          <Link 
+            to="/admin/orders" 
+            className={`flex flex-col items-center gap-1 py-1 px-3 rounded-xl relative transition-all ${
+              location.pathname === '/admin/orders' ? 'text-veltrix-blue font-bold' : 'text-veltrix-gray-400 hover:text-white'
+            }`}
+          >
+            <ShoppingCart className="w-5 h-5" />
+            <span className="text-[10px]">Orders</span>
+            {stats.pendingOrders > 0 && (
+              <span className="absolute top-1 right-2 w-2 h-2 rounded-full bg-veltrix-blue animate-pulse" />
+            )}
+          </Link>
+
+          <Link 
+            to="/admin/products" 
+            className={`flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition-all ${
+              location.pathname === '/admin/products' ? 'text-veltrix-blue font-bold' : 'text-veltrix-gray-400 hover:text-white'
+            }`}
+          >
+            <Package className="w-5 h-5" />
+            <span className="text-[10px]">Catalog</span>
+          </Link>
+
+          <Link 
+            to="/admin/visitors" 
+            className={`flex flex-col items-center gap-1 py-1 px-3 rounded-xl relative transition-all ${
+              location.pathname === '/admin/visitors' ? 'text-veltrix-blue font-bold' : 'text-veltrix-gray-400 hover:text-white'
+            }`}
+          >
+            <Globe className="w-5 h-5" />
+            <span className="text-[10px]">Visitors</span>
+            {stats.activeVisitorsNow > 0 && (
+              <span className="absolute top-1 right-2 w-2 h-2 rounded-full bg-green-400 animate-ping" />
+            )}
+          </Link>
+
+          <button 
+            onClick={() => setSidebarOpen(true)} 
+            className="flex flex-col items-center gap-1 py-1 px-3 rounded-xl text-veltrix-gray-400 hover:text-white transition-all"
+            aria-label="Open navigation menu"
+          >
+            <Menu className="w-5 h-5" />
+            <span className="text-[10px]">Menu</span>
+          </button>
+        </nav>
       </div>
     </div>
   )

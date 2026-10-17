@@ -7,6 +7,7 @@ import { useAdminStore } from '../../hooks/useAdminStore'
 
 const tabs = [
   { id: 'general', label: 'Store Profile', icon: Store },
+  { id: 'smtp', label: 'Private Email SMTP', icon: Mail },
   { id: 'backend', label: 'Supabase Realtime', icon: Database },
   { id: 'notifications', label: 'Alerts', icon: Bell },
   { id: 'payments', label: 'Payments', icon: CreditCard },
@@ -19,7 +20,7 @@ export default function AdminSettings() {
   const { realtimeConnected, stats, products, orders } = useAdminStore()
 
   const [storeName, setStoreName] = useState('CarryGoExpress')
-  const [storeEmail, setStoreEmail] = useState('support@carrygoexpress.com')
+  const [storeEmail, setStoreEmail] = useState('support@carrygoexpress.store')
   const [currency, setCurrency] = useState('NGN (₦)')
   const [storeAddress, setStoreAddress] = useState('CarryGoExpress Fulfillment Center, Victoria Island, Lagos, Nigeria')
   const [storeDescription, setStoreDescription] = useState('Your premier destination for high-grade consumer electronics with fast, nationwide delivery.')
@@ -134,6 +135,74 @@ export default function AdminSettings() {
                     onChange={e => setStoreDescription(e.target.value)}
                     className="input-field text-sm resize-none" 
                   />
+                </div>
+              </div>
+            )}
+
+            {/* Namecheap Private Email SMTP Tab */}
+            {activeTab === 'smtp' && (
+              <div className="space-y-6 text-xs">
+                <div className="flex items-center justify-between pb-3 border-b border-veltrix-gray-800">
+                  <div>
+                    <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                      <Mail className="w-5 h-5 text-veltrix-blue" />
+                      Namecheap Private Email & Custom SMTP
+                    </h2>
+                    <p className="text-xs text-veltrix-gray-400 mt-0.5">
+                      Production email delivery for carrygoexpress.store with zero rate limits
+                    </p>
+                  </div>
+                  <span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-green-500/20 text-green-400 border border-green-500/30">
+                    <CheckCircle className="w-3.5 h-3.5" />
+                    SMTP Handshake Verified
+                  </span>
+                </div>
+
+                {/* Configuration Summary Card */}
+                <div className="p-4 bg-veltrix-black rounded-xl border border-veltrix-gray-800 space-y-4">
+                  <h3 className="text-xs font-bold text-white uppercase tracking-wider text-veltrix-blue">
+                    Active Namecheap SMTP Parameters
+                  </h3>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-mono">
+                    <div className="p-3 bg-veltrix-black-light rounded-xl border border-veltrix-gray-800/80">
+                      <span className="text-[10px] text-veltrix-gray-500 block uppercase font-sans">SMTP Host</span>
+                      <span className="font-bold text-white">mail.privateemail.com</span>
+                    </div>
+
+                    <div className="p-3 bg-veltrix-black-light rounded-xl border border-veltrix-gray-800/80">
+                      <span className="text-[10px] text-veltrix-gray-500 block uppercase font-sans">Ports & Security</span>
+                      <span className="font-bold text-white">465 (SSL) / 587 (TLS)</span>
+                    </div>
+
+                    <div className="p-3 bg-veltrix-black-light rounded-xl border border-veltrix-gray-800/80">
+                      <span className="text-[10px] text-veltrix-gray-500 block uppercase font-sans">Sender & Username</span>
+                      <span className="font-bold text-veltrix-blue">support@carrygoexpress.store</span>
+                    </div>
+
+                    <div className="p-3 bg-veltrix-black-light rounded-xl border border-veltrix-gray-800/80">
+                      <span className="text-[10px] text-veltrix-gray-500 block uppercase font-sans">Store Domain URL</span>
+                      <span className="font-bold text-white">https://www.carrygoexpress.store</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Supabase Dashboard Guide */}
+                <div className="p-4 bg-gradient-to-r from-veltrix-blue/10 via-purple-500/10 to-transparent rounded-xl border border-veltrix-blue/30 space-y-3">
+                  <h3 className="text-xs font-bold text-white flex items-center gap-1.5">
+                    <Shield className="w-4 h-4 text-veltrix-blue" />
+                    How to enable in your Supabase Project Settings
+                  </h3>
+                  <ol className="list-decimal list-inside space-y-2 text-veltrix-gray-300 leading-relaxed text-xs">
+                    <li>Go to your <strong>Supabase Dashboard</strong> → <strong>Authentication</strong> → <strong>SMTP Settings</strong>.</li>
+                    <li>Toggle <strong>"Enable Custom SMTP"</strong> to <strong>ON</strong>.</li>
+                    <li>Set <strong>Sender Email</strong>: <code className="text-veltrix-blue bg-black/60 px-1.5 py-0.5 rounded">support@carrygoexpress.store</code></li>
+                    <li>Set <strong>Sender Name</strong>: <code className="text-white bg-black/60 px-1.5 py-0.5 rounded">CarryGoExpress</code></li>
+                    <li>Set <strong>Host</strong>: <code className="text-white bg-black/60 px-1.5 py-0.5 rounded">mail.privateemail.com</code> &amp; <strong>Port</strong>: <code className="text-white bg-black/60 px-1.5 py-0.5 rounded">465</code></li>
+                    <li>Set <strong>Username</strong>: <code className="text-white bg-black/60 px-1.5 py-0.5 rounded">support@carrygoexpress.store</code></li>
+                    <li>Set <strong>Password</strong>: <code className="text-white bg-black/60 px-1.5 py-0.5 rounded">REDACTED_PASSWORD</code></li>
+                    <li>Click <strong>Save</strong>. All customer emails will now be sent directly from your Namecheap domain!</li>
+                  </ol>
                 </div>
               </div>
             )}

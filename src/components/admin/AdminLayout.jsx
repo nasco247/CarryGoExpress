@@ -262,7 +262,7 @@ export default function AdminLayout() {
                 <div className="absolute right-0 mt-2 w-56 bg-veltrix-black-light border border-veltrix-gray-800 rounded-xl shadow-2xl py-2 animate-fade-in z-50">
                   <div className="px-4 py-3 border-b border-veltrix-gray-800">
                     <p className="text-sm font-bold text-white">CarryGo Admin</p>
-                    <p className="text-xs text-veltrix-gray-500 truncate">admin@carrygoexpress.com</p>
+                    <p className="text-xs text-veltrix-gray-500 truncate">support@carrygoexpress.store</p>
                   </div>
                   <Link 
                     to="/admin/settings" 

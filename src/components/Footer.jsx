@@ -99,7 +99,9 @@ export default function Footer() {
               </li>
               <li className="flex items-center gap-3">
                 <Mail className="w-5 h-5 text-veltrix-blue shrink-0" />
-                <span className="text-sm text-veltrix-gray-400">support@carrygoexpress.com</span>
+                <a href="mailto:support@carrygoexpress.store" className="text-sm text-veltrix-gray-400 hover:text-veltrix-blue transition-colors">
+                  support@carrygoexpress.store
+                </a>
               </li>
               <li className="flex items-start gap-3 pt-2">
                 <ShieldCheck className="w-5 h-5 text-green-400 shrink-0 mt-0.5" />

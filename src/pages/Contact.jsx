@@ -58,7 +58,9 @@ export default function Contact() {
                   </div>
                   <div>
                     <h3 className="font-semibold text-white mb-1">Official Support Email</h3>
-                    <p className="text-veltrix-gray-400">support@carrygoexpress.com</p>
+                    <a href="mailto:support@carrygoexpress.store" className="text-veltrix-blue hover:underline">
+                      support@carrygoexpress.store
+                    </a>
                     <p className="text-xs text-veltrix-gray-500 mt-1">We respond to all inquiries within 24 hours</p>
                   </div>
                 </div>

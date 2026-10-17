@@ -45,7 +45,7 @@ export default function PrivacyPolicy() {
           <section>
             <h2 className="text-2xl font-bold text-white mb-4">5. Contact Us</h2>
             <p className="leading-relaxed">
-              If you have any questions about this privacy policy or our privacy practices, please contact us at support@carrygoexpress.com.
+              If you have any questions about this privacy policy or our privacy practices, please contact us at support@carrygoexpress.store.
             </p>
           </section>
         </div>

@@ -22,7 +22,7 @@ export default function AdminSettings() {
   const [storeName, setStoreName] = useState('CarryGoExpress')
   const [storeEmail, setStoreEmail] = useState('support@carrygoexpress.store')
   const [currency, setCurrency] = useState('USD ($)')
-  const [storeAddress, setStoreAddress] = useState('CarryGoExpress Fulfillment Center, Victoria Island, Lagos, Nigeria')
+  const [storeAddress, setStoreAddress] = useState('2349 Brentwood Drive, Austin, TX 78749')
   const [storeDescription, setStoreDescription] = useState('Your premier destination for high-grade consumer electronics with fast, nationwide delivery.')
 
   const handleSave = () => {

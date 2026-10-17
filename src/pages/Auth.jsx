@@ -4,7 +4,7 @@ import {
   Eye, EyeOff, Mail, Lock, User, ArrowRight, Shield, 
   CheckCircle, AlertCircle, Sparkles, Loader2, ArrowLeft, Check
 } from 'lucide-react'
-import { signIn, signUp } from '../lib/supabase'
+import { signIn, signUp, resendConfirmationEmail } from '../lib/supabase'
 import { useAuthStore } from '../hooks/useStore'
 
 export function Login() {
@@ -229,8 +229,23 @@ export function Register() {
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
   const [registeredEmail, setRegisteredEmail] = useState('')
+  const [resending, setResending] = useState(false)
+  const [resendStatus, setResendStatus] = useState(null)
   const navigate = useNavigate()
   const { setUser } = useAuthStore()
+
+  const handleResend = async () => {
+    if (!registeredEmail) return
+    setResending(true)
+    setResendStatus(null)
+    const { error: resendErr } = await resendConfirmationEmail(registeredEmail)
+    setResending(false)
+    if (resendErr) {
+      setResendStatus({ type: 'error', message: resendErr.message || 'Failed to resend confirmation email.' })
+    } else {
+      setResendStatus({ type: 'success', message: 'Confirmation email resent! Please check your inbox and spam folder.' })
+    }
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -285,7 +300,7 @@ export function Register() {
       if (data?.session && data?.user) {
         setUser(data.user)
         setSuccess(true)
-        setTimeout(() => navigate('/'), 2200)
+        setTimeout(() => navigate('/'), 2800)
       } else {
         // Confirmation email state or user created
         setSuccess(true)
@@ -352,17 +367,46 @@ export function Register() {
         {/* Card */}
         <div className="bg-veltrix-black-light/95 backdrop-blur-xl border border-veltrix-gray-800 rounded-2xl p-6 sm:p-8 shadow-2xl">
           {success ? (
-            <div className="py-6 text-center space-y-4 animate-fade-in">
-              <div className="w-16 h-16 bg-green-500/20 text-green-400 rounded-2xl flex items-center justify-center mx-auto shadow-[0_0_25px_rgba(34,197,94,0.3)]">
-                <CheckCircle className="w-8 h-8" />
+            <div className="py-4 text-center space-y-4 animate-fade-in">
+              <div className="w-16 h-16 bg-gradient-to-br from-veltrix-blue/25 to-purple-500/20 text-veltrix-blue border border-veltrix-blue/40 rounded-2xl flex items-center justify-center mx-auto shadow-glow">
+                <Mail className="w-8 h-8 text-veltrix-blue animate-pulse" />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-white">Account Created Successfully! 🎉</h2>
+                <h2 className="text-xl font-bold text-white">Confirmation Email Sent! 📩</h2>
                 <p className="text-xs text-veltrix-gray-300 mt-2 leading-relaxed">
-                  Welcome to CarryGoExpress! Your account <span className="text-veltrix-blue font-semibold">{registeredEmail}</span> has been registered securely.
+                  We've sent a secure verification link to:
                 </p>
+                <div className="mt-1 px-3 py-1.5 bg-veltrix-black border border-veltrix-gray-800 rounded-lg inline-block max-w-full">
+                  <span className="text-veltrix-blue font-mono font-bold text-xs truncate block">{registeredEmail}</span>
+                </div>
               </div>
-              <div className="pt-3">
+
+              {/* Instructions checklist */}
+              <div className="p-3.5 bg-veltrix-black/80 rounded-xl border border-veltrix-gray-800 text-left text-xs space-y-2">
+                <div className="flex items-start gap-2 text-veltrix-gray-300">
+                  <span className="w-4 h-4 rounded-full bg-veltrix-blue/20 text-veltrix-blue text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">1</span>
+                  <span>Open your inbox and look for the confirmation link from <strong>CarryGoExpress</strong>.</span>
+                </div>
+                <div className="flex items-start gap-2 text-veltrix-gray-300">
+                  <span className="w-4 h-4 rounded-full bg-veltrix-blue/20 text-veltrix-blue text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">2</span>
+                  <span>Can't find it? Check your <strong>Spam or Junk folder</strong> (usually arrives in 1–2 minutes).</span>
+                </div>
+                <div className="flex items-start gap-2 text-veltrix-gray-300">
+                  <span className="w-4 h-4 rounded-full bg-veltrix-blue/20 text-veltrix-blue text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">3</span>
+                  <span>Click <strong>Confirm Email</strong> in the message to activate full checkout & order access.</span>
+                </div>
+              </div>
+
+              {resendStatus && (
+                <div className={`p-3 rounded-xl text-xs flex items-center gap-2 ${
+                  resendStatus.type === 'success' ? 'bg-green-500/10 border border-green-500/30 text-green-300' : 'bg-red-500/10 border border-red-500/30 text-red-300'
+                }`}>
+                  {resendStatus.type === 'success' ? <Check className="w-4 h-4 text-green-400 shrink-0" /> : <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />}
+                  <span>{resendStatus.message}</span>
+                </div>
+              )}
+
+              <div className="pt-2 space-y-2.5">
                 <Link
                   to="/login"
                   className="w-full h-12 bg-veltrix-blue text-veltrix-black font-bold rounded-xl text-sm shadow-glow flex items-center justify-center gap-2 hover:shadow-glow-lg transition-all"
@@ -370,6 +414,15 @@ export function Register() {
                   <span>Proceed to Sign In</span>
                   <ArrowRight className="w-4 h-4" />
                 </Link>
+
+                <button
+                  type="button"
+                  onClick={handleResend}
+                  disabled={resending}
+                  className="w-full py-2.5 bg-veltrix-gray-900 border border-veltrix-gray-800 hover:border-veltrix-gray-700 text-veltrix-gray-300 hover:text-white rounded-xl text-xs font-semibold transition-all disabled:opacity-50"
+                >
+                  {resending ? 'Resending verification email...' : "Didn't receive it? Click to Resend Email"}
+                </button>
               </div>
             </div>
           ) : (

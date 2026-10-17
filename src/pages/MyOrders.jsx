@@ -244,13 +244,19 @@ export default function MyOrders() {
                       )}
 
                       {/* Payment info */}
-                      <div className="flex flex-wrap gap-3 pt-2 border-t border-veltrix-gray-800">
+                      <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-veltrix-gray-800">
                         <div className="text-xs">
                           <span className="text-veltrix-gray-500">Payment: </span>
                           <span className={order.payment_status === 'paid' ? 'text-green-400 font-medium' : 'text-yellow-400 font-medium'}>
                             {order.payment_status || 'N/A'}
                           </span>
                         </div>
+                        {order.metadata?.payment_plan && (
+                          <div className="text-xs">
+                            <span className="text-veltrix-gray-500">Plan: </span>
+                            <span className="text-purple-300 font-semibold">{order.metadata.payment_plan}</span>
+                          </div>
+                        )}
                         <div className="text-xs">
                           <span className="text-veltrix-gray-500">Ref: </span>
                           <span className="text-veltrix-gray-300 font-mono">{order.payment_reference?.slice(0, 16) || 'N/A'}</span>

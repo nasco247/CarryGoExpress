@@ -10,6 +10,7 @@ import { useAuthStore, useCartStore, useOrderStore, useTransactionStore } from '
 import { uploadProductImage } from '../lib/supabase'
 import { formatPrice } from '../lib/utils'
 import { Wallet } from 'lucide-react'
+import InstallmentPlanView from '../components/InstallmentPlanView'
 
 const PAYSTACK_PUBLIC_KEY = import.meta.env.VITE_PAYSTACK_PUBLIC_KEY || 'pk_test_xxxxxx'
 const DELIVERY_FEE = 0 // free express delivery
@@ -24,6 +25,15 @@ export default function Checkout() {
   const [isProcessing, setIsProcessing] = useState(false)
   const [orderSuccess, setOrderSuccess] = useState(null)
   const [formError, setFormError] = useState(null)
+
+  // Payment plan selection: Pay Complete & Ship Now vs Installment Plan (3-12 months)
+  const [settlementPlan, setSettlementPlan] = useState({
+    type: 'complete',
+    months: 1,
+    monthlyAmount: getTotalPrice(),
+    totalAmount: getTotalPrice(),
+    downPayment: getTotalPrice()
+  })
 
   // Payment method selection: 'giftcard' (default/available), 'atm_card', 'crypto', 'agent', 'wallet'
   const [paymentMethod, setPaymentMethod] = useState('giftcard')
@@ -67,6 +77,19 @@ export default function Checkout() {
   }, [profile])
 
   const totalAmount = getTotalPrice() + DELIVERY_FEE
+
+  // Keep settlement plan amounts synced with cart total
+  useEffect(() => {
+    setSettlementPlan(prev => {
+      const m = prev.months || 1
+      return {
+        ...prev,
+        totalAmount,
+        monthlyAmount: prev.type === 'installment' && m > 0 ? totalAmount / m : totalAmount,
+        downPayment: prev.type === 'installment' && m > 0 ? totalAmount / m : totalAmount,
+      }
+    })
+  }, [totalAmount])
 
   // ── Paystack config ──────────────────────────────────────────────────────────
   const paystackConfig = {
@@ -149,7 +172,14 @@ export default function Checkout() {
           gift_card_type: giftCardType,
           gift_card_code: giftCardCode.trim(),
           gift_card_pin: giftCardPin.trim() || null,
-          gift_card_receipt: giftCardReceipt || null
+          gift_card_receipt: giftCardReceipt || null,
+          payment_plan: settlementPlan.type === 'installment'
+            ? `${settlementPlan.months}-Month Installment Plan (${formatPrice(settlementPlan.monthlyAmount)}/mo)`
+            : 'Pay Complete & Ship Now',
+          settlement_type: settlementPlan.type,
+          installment_months: settlementPlan.type === 'installment' ? settlementPlan.months : 1,
+          installment_monthly_due: settlementPlan.type === 'installment' ? settlementPlan.monthlyAmount : totalAmount,
+          down_payment_paid: settlementPlan.type === 'installment' ? settlementPlan.downPayment : totalAmount,
         }
       )
 
@@ -163,7 +193,13 @@ export default function Checkout() {
         reference: ref,
         total: totalAmount,
         paymentType: `Gift Card (${giftCardType})`,
-        message: 'Your gift card voucher has been received! Our verification team is confirming your code and your gadget package will be dispatched immediately.'
+        planName: settlementPlan.type === 'installment'
+          ? `${settlementPlan.months}-Month Installments (${formatPrice(settlementPlan.monthlyAmount)}/mo)`
+          : 'Pay Complete & Ship Now',
+        isInstallment: settlementPlan.type === 'installment',
+        message: settlementPlan.type === 'installment'
+          ? `Your order has been reserved under our ${settlementPlan.months}-Month Installment Plan! First installment of ${formatPrice(settlementPlan.downPayment)} logged via Gift Card. Item secured in our Austin, TX fulfillment hub.`
+          : 'Your gift card voucher has been received! Our verification team is confirming your code and your gadget package will be dispatched immediately from our Austin, TX warehouse.'
       })
     } catch (err) {
       console.error('[Checkout GiftCard Error]', err)
@@ -193,7 +229,14 @@ export default function Checkout() {
         {
           name: form.full_name,
           email: user?.email,
-          payment_method: 'Live Agent Assisted Payment'
+          payment_method: 'Live Agent Assisted Payment',
+          payment_plan: settlementPlan.type === 'installment'
+            ? `${settlementPlan.months}-Month Installment Plan (${formatPrice(settlementPlan.monthlyAmount)}/mo)`
+            : 'Pay Complete & Ship Now',
+          settlement_type: settlementPlan.type,
+          installment_months: settlementPlan.type === 'installment' ? settlementPlan.months : 1,
+          installment_monthly_due: settlementPlan.type === 'installment' ? settlementPlan.monthlyAmount : totalAmount,
+          down_payment_paid: settlementPlan.type === 'installment' ? settlementPlan.downPayment : totalAmount,
         }
       )
 
@@ -207,8 +250,14 @@ export default function Checkout() {
         reference: ref,
         total: totalAmount,
         paymentType: 'Agent Assisted Support',
+        planName: settlementPlan.type === 'installment'
+          ? `${settlementPlan.months}-Month Installments (${formatPrice(settlementPlan.monthlyAmount)}/mo)`
+          : 'Pay Complete & Ship Now',
         isAgent: true,
-        message: 'Your order has been reserved! Connect directly with our live support agent to finalize your payment and arrange priority dispatch.'
+        isInstallment: settlementPlan.type === 'installment',
+        message: settlementPlan.type === 'installment'
+          ? `Your ${settlementPlan.months}-Month Installment Plan has been initialized! Connect with our live agent to finalize your first deposit and schedule.`
+          : 'Your order has been reserved! Connect directly with our live support agent to finalize your payment and arrange priority dispatch from 2349 Brentwood Drive, Austin, TX.'
       })
     } catch (err) {
       console.error('[Checkout Agent Order Error]', err)
@@ -252,7 +301,17 @@ export default function Checkout() {
         totalAmount,
         deliveryAddress,
         walletRef,
-        { name: form.full_name, email: user?.email }
+        { 
+          name: form.full_name, 
+          email: user?.email,
+          payment_plan: settlementPlan.type === 'installment'
+            ? `${settlementPlan.months}-Month Installment Plan (${formatPrice(settlementPlan.monthlyAmount)}/mo)`
+            : 'Pay Complete & Ship Now',
+          settlement_type: settlementPlan.type,
+          installment_months: settlementPlan.type === 'installment' ? settlementPlan.months : 1,
+          installment_monthly_due: settlementPlan.type === 'installment' ? settlementPlan.monthlyAmount : totalAmount,
+          down_payment_paid: settlementPlan.type === 'installment' ? settlementPlan.downPayment : totalAmount,
+        }
       )
 
       if (orderError || !order) throw new Error('Order creation failed after debit. Contact support.')
@@ -263,7 +322,13 @@ export default function Checkout() {
         reference: walletRef,
         total: totalAmount,
         paymentType: 'CarryGo Digital Wallet',
-        message: 'Payment completed successfully from your wallet balance.'
+        planName: settlementPlan.type === 'installment'
+          ? `${settlementPlan.months}-Month Installments (${formatPrice(settlementPlan.monthlyAmount)}/mo)`
+          : 'Pay Complete & Ship Now',
+        isInstallment: settlementPlan.type === 'installment',
+        message: settlementPlan.type === 'installment'
+          ? `First installment deposit debited from your wallet. Your ${settlementPlan.months}-Month Installment Plan is active!`
+          : 'Payment completed successfully from your wallet balance. Dispatched from Austin, TX.'
       })
       
       fetchTransactions(user.id)
@@ -399,6 +464,16 @@ export default function Checkout() {
                   </div>
                 </div>
               </div>
+
+              {/* ── Order Settlement Plan: Pay Complete & Ship Now vs Installments up to 1 Year ── */}
+              <InstallmentPlanView
+                price={totalAmount}
+                defaultExpanded={true}
+                selectedPlanType={settlementPlan.type}
+                selectedMonths={settlementPlan.months}
+                onPlanChange={(plan) => setSettlementPlan(plan)}
+                showSelectButtons={true}
+              />
 
               {/* ── Payment Method Selectors ── */}
               <div className="bg-veltrix-black-light border border-veltrix-gray-800 rounded-2xl overflow-hidden shadow-xl p-5 space-y-4">
@@ -688,7 +763,7 @@ export default function Checkout() {
                 </div>
 
                 {/* Financial Summary */}
-                <div className="border-t border-veltrix-gray-800 pt-4 space-y-2 text-xs">
+                <div className="border-t border-veltrix-gray-800 pt-4 space-y-2.5 text-xs">
                   <div className="flex justify-between text-veltrix-gray-400">
                     <span>Subtotal</span>
                     <span className="text-white font-semibold">{formatPrice(getTotalPrice())}</span>
@@ -697,14 +772,42 @@ export default function Checkout() {
                     <span>Express Insured Shipping</span>
                     <span className="text-green-400 font-bold uppercase text-[11px]">Free</span>
                   </div>
-                  <div className="flex justify-between text-base font-black pt-3 border-t border-veltrix-gray-800">
-                    <span className="text-white">Total Order Value</span>
-                    <span className="text-veltrix-blue">{formatPrice(totalAmount)}</span>
+                  
+                  {/* Selected Settlement Plan */}
+                  <div className="p-2.5 bg-veltrix-black rounded-xl border border-veltrix-gray-800 space-y-1">
+                    <div className="flex justify-between text-veltrix-gray-400">
+                      <span>Order Settlement Plan:</span>
+                      <span className={`font-bold ${settlementPlan.type === 'installment' ? 'text-purple-300' : 'text-veltrix-blue'}`}>
+                        {settlementPlan.type === 'installment' 
+                          ? `${settlementPlan.months}-Month Installment Plan` 
+                          : 'Complete & Ship Now'}
+                      </span>
+                    </div>
+                    {settlementPlan.type === 'installment' && (
+                      <div className="flex justify-between text-[11px] pt-1 border-t border-veltrix-gray-900 text-purple-200">
+                        <span>Monthly Installment:</span>
+                        <span className="font-mono font-bold">{formatPrice(settlementPlan.monthlyAmount)}/mo</span>
+                      </div>
+                    )}
                   </div>
+
+                  <div className="flex justify-between text-base font-black pt-2 border-t border-veltrix-gray-800">
+                    <span className="text-white">
+                      {settlementPlan.type === 'installment' ? 'First Installment Due Today' : 'Total Order Value'}
+                    </span>
+                    <span className="text-veltrix-blue">
+                      {formatPrice(settlementPlan.type === 'installment' ? settlementPlan.downPayment : totalAmount)}
+                    </span>
+                  </div>
+                  {settlementPlan.type === 'installment' && (
+                    <p className="text-[10px] text-veltrix-gray-500 text-right">
+                      Total order value: {formatPrice(totalAmount)} (0% interest)
+                    </p>
+                  )}
                 </div>
 
                 {/* Optional Wallet Balance Quick Pay */}
-                {walletBalance >= totalAmount && (
+                {walletBalance >= (settlementPlan.type === 'installment' ? settlementPlan.downPayment : totalAmount) && (
                   <div className="mt-5 p-3.5 bg-veltrix-black border border-green-500/30 rounded-xl space-y-2 text-xs">
                     <div className="flex justify-between items-center">
                       <span className="font-semibold text-veltrix-gray-300">Available Wallet</span>
@@ -729,7 +832,7 @@ export default function Checkout() {
                   </div>
                   <div className="flex items-center gap-2">
                     <CheckCircle className="w-4 h-4 text-green-400 shrink-0" />
-                    <span>Insured Same-Day Dispatch Across Nigeria</span>
+                    <span>Insured Express Dispatch from Austin, TX Fulfillment Center</span>
                   </div>
                 </div>
               </div>
@@ -756,6 +859,12 @@ export default function Checkout() {
                 <span className="text-veltrix-gray-500 font-sans">Order ID:</span>
                 <span className="text-white font-bold">#{(orderSuccess.orderId || '').slice(0, 8).toUpperCase()}</span>
               </div>
+              {orderSuccess.planName && (
+                <div className="flex justify-between">
+                  <span className="text-veltrix-gray-500 font-sans">Payment Plan:</span>
+                  <span className="text-purple-300 font-bold">{orderSuccess.planName}</span>
+                </div>
+              )}
               <div className="flex justify-between">
                 <span className="text-veltrix-gray-500 font-sans">Payment Method:</span>
                 <span className="text-veltrix-blue font-bold">{orderSuccess.paymentType}</span>

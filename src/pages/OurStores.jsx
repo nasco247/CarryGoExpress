@@ -3,10 +3,10 @@ import { MapPin, Mail, Clock } from 'lucide-react'
 const stores = [
   {
     id: 1,
-    name: 'CarryGoExpress Flagship Hub',
-    address: '123 Technology Drive, Victoria Island, Lagos',
-    email: 'vi@carrygoexpress.com',
-    hours: 'Mon-Sat: 9:00 AM - 8:00 PM\nSun: 10:00 AM - 6:00 PM',
+    name: 'CarryGoExpress Flagship Headquarters',
+    address: '2349 Brentwood Drive, Austin, TX 78749',
+    email: 'support@carrygoexpress.store',
+    hours: 'Mon-Sat: 8:00 AM - 7:00 PM\nSun: 10:00 AM - 5:00 PM',
     image: 'https://images.unsplash.com/photo-1604719312566-8912e9227c6a?w=600'
   },
   {

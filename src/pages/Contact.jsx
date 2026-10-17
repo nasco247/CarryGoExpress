@@ -151,7 +151,7 @@ export default function Contact() {
                   </div>
                   <div>
                     <h3 className="font-semibold text-white mb-1">Head Office & Central Fulfillment</h3>
-                    <p className="text-veltrix-gray-400">CarryGoExpress Hub<br />123 Technology Drive, Victoria Island, Lagos<br />Nigeria</p>
+                    <p className="text-veltrix-gray-400">CarryGoExpress Hub & Headquarters<br />2349 Brentwood Drive<br />Austin, TX 78749</p>
                   </div>
                 </div>
               </div>

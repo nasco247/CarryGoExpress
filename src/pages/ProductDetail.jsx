@@ -11,6 +11,7 @@ import { formatPrice } from '../lib/utils'
 import { supabase } from '../lib/supabase'
 import ProductCard from '../components/ProductCard'
 import LazyImage from '../components/LazyImage'
+import InstallmentPlanView from '../components/InstallmentPlanView'
 
 export default function ProductDetail() {
   const { id } = useParams()
@@ -193,6 +194,13 @@ export default function ProductDetail() {
             <p className="text-veltrix-gray-300 text-sm leading-relaxed">
               {product.description}
             </p>
+
+            {/* Expandable Installment Plan Set View (Pay Complete & Ship Now vs Pay in Months up to a Year) */}
+            <InstallmentPlanView 
+              price={product.price * quantity} 
+              defaultExpanded={false}
+              showSelectButtons={false}
+            />
 
             {/* Quantity + Actions */}
             <div className="space-y-4 pt-2">

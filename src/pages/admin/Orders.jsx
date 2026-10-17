@@ -305,13 +305,21 @@ export default function AdminOrders() {
 
             <div className="p-6 space-y-5 text-xs">
               {/* Status Header */}
-              <div className="flex items-center justify-between p-4 bg-veltrix-black rounded-xl border border-veltrix-gray-800">
+              <div className="flex flex-wrap items-center justify-between gap-3 p-4 bg-veltrix-black rounded-xl border border-veltrix-gray-800">
                 <div>
                   <span className="text-veltrix-gray-400 block mb-1">Status</span>
                   <span className={`inline-block px-3 py-1 rounded-full font-bold border ${getStatusColor(selectedOrder.status)}`}>
                     {selectedOrder.status}
                   </span>
                 </div>
+                {selectedOrder.metadata?.payment_plan && (
+                  <div>
+                    <span className="text-veltrix-gray-400 block mb-1">Payment Plan</span>
+                    <span className="px-2.5 py-1 rounded-lg bg-purple-500/20 text-purple-300 border border-purple-500/30 font-semibold text-[11px]">
+                      {selectedOrder.metadata.payment_plan}
+                    </span>
+                  </div>
+                )}
                 <div className="text-right">
                   <span className="text-veltrix-gray-400 block mb-1">Total Amount</span>
                   <span className="text-xl font-black text-white">{formatPrice(selectedOrder.total_amount)}</span>

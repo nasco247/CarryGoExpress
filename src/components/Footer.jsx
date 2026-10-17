@@ -146,7 +146,7 @@ export default function Footer() {
               <li className="flex items-start gap-3">
                 <MapPin className="w-5 h-5 text-veltrix-blue shrink-0 mt-0.5" />
                 <span className="text-sm text-veltrix-gray-400">
-                  CarryGoExpress Center, Victoria Island, Lagos, Nigeria
+                  2349 Brentwood Drive, Austin, TX 78749
                 </span>
               </li>
               <li className="flex items-center gap-3">

@@ -21,7 +21,7 @@ export default function AdminSettings() {
 
   const [storeName, setStoreName] = useState('CarryGoExpress')
   const [storeEmail, setStoreEmail] = useState('support@carrygoexpress.store')
-  const [currency, setCurrency] = useState('NGN (₦)')
+  const [currency, setCurrency] = useState('USD ($)')
   const [storeAddress, setStoreAddress] = useState('CarryGoExpress Fulfillment Center, Victoria Island, Lagos, Nigeria')
   const [storeDescription, setStoreDescription] = useState('Your premier destination for high-grade consumer electronics with fast, nationwide delivery.')
 
@@ -101,10 +101,10 @@ export default function AdminSettings() {
                       onChange={e => setCurrency(e.target.value)}
                       className="input-field text-sm"
                     >
-                      <option>NGN (₦)</option>
                       <option>USD ($)</option>
                       <option>EUR (€)</option>
                       <option>GBP (£)</option>
+                      <option>NGN (₦)</option>
                     </select>
                   </div>
                   <div className="space-y-1.5">
@@ -287,12 +287,12 @@ export default function AdminSettings() {
                 </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <label className="font-semibold text-veltrix-gray-300">Free Delivery Threshold (₦)</label>
-                    <input type="number" defaultValue="100000" className="input-field text-sm" />
+                    <label className="font-semibold text-veltrix-gray-300">Free Delivery Threshold ($)</label>
+                    <input type="number" defaultValue="100" className="input-field text-sm" />
                   </div>
                   <div className="space-y-1">
-                    <label className="font-semibold text-veltrix-gray-300">Standard Shipping Rate (₦)</label>
-                    <input type="number" defaultValue="3500" className="input-field text-sm" />
+                    <label className="font-semibold text-veltrix-gray-300">Standard Shipping Rate ($)</label>
+                    <input type="number" defaultValue="15" className="input-field text-sm" />
                   </div>
                 </div>
               </div>

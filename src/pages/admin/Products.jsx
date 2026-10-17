@@ -817,7 +817,7 @@ export default function AdminProducts() {
                 {/* Selling Price */}
                 <div className="space-y-1">
                   <div className="flex items-center justify-between">
-                    <label className="text-xs font-semibold text-veltrix-gray-300">Selling Price (₦) *</label>
+                    <label className="text-xs font-semibold text-veltrix-gray-300">Selling Price ($) *</label>
                     <span className="text-[10px] text-veltrix-blue font-medium">You can choose/adjust anytime</span>
                   </div>
                   <input
@@ -826,19 +826,19 @@ export default function AdminProducts() {
                     value={form.price}
                     onChange={e => setForm({ ...form, price: e.target.value })}
                     className="input-field text-sm font-bold text-white"
-                    placeholder="e.g. 1450000"
+                    placeholder="e.g. 999"
                   />
                 </div>
 
                 {/* Original Price */}
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-veltrix-gray-300">Original List Price (₦) (Optional)</label>
+                  <label className="text-xs font-semibold text-veltrix-gray-300">Original List Price ($) (Optional)</label>
                   <input
                     type="number"
                     value={form.original_price}
                     onChange={e => setForm({ ...form, original_price: e.target.value })}
                     className="input-field text-sm"
-                    placeholder="e.g. 1600000"
+                    placeholder="e.g. 1199"
                   />
                 </div>
 

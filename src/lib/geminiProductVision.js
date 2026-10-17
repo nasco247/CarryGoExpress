@@ -83,13 +83,13 @@ Identify the device accurately and respond with a strictly valid JSON object (no
   "brand": "Brand name (e.g. 'Apple', 'Samsung', 'Sony', 'Dell', 'Lenovo', 'ASUS', 'Google', 'Xiaomi', 'OnePlus', etc.)",
   "category": "Must be exactly one of: 'Smartphones & Tablets', 'Laptops & Computers', 'Smartwatches & Wearables', 'Audio & Sound', 'Gaming & Handhelds', 'Accessories & Power'",
   "subcategory": "Specific model line, e.g. 'iPhone', 'Samsung Galaxy', 'Google Pixel', 'MacBooks', 'Gaming Laptops', 'AirPods & Earbuds', 'PlayStation 5', etc.",
-  "price": 1250000,
-  "original_price": 1400000,
+  "price": 999,
+  "original_price": 1199,
   "badge": "One of: 'Hot Deal', 'Flagship', 'New Arrival', 'Best Seller', or 'Premium'",
   "stock": 12,
   "description": "Engaging, professional product description detailing specs, screen, battery life, processor, connectivity, and standout features in 2-3 crisp paragraphs."
 }
-Prices must be realistic approximate figures in Nigerian Naira (NGN).
+Prices must be realistic approximate figures in US Dollars ($ USD).
 `
 
     // Try gemini-1.5-flash with fallback to gemini-1.5-pro or gemini-2.0-flash

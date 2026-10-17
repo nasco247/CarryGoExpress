@@ -10,7 +10,7 @@ export default function Navbar() {
   const [searchQuery, setSearchQuery] = useState('')
   const { isScrolled } = useScrollPosition()
   const { getTotalItems, toggleCart } = useCartStore()
-  const { user, profile, setUser } = useAuthStore()
+  const { user, profile, setUser, logout } = useAuthStore()
   const [isProfileOpen, setIsProfileOpen] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const navigate = useNavigate()
@@ -24,9 +24,10 @@ export default function Navbar() {
   }
 
   const handleLogout = async () => {
-    await signOut()
-    setUser(null)
+    await logout()
     setIsProfileOpen(false)
+    setIsMobileMenuOpen(false)
+    navigate('/login')
   }
 
   const [showPromo, setShowPromo] = useState(() => {
@@ -62,7 +63,7 @@ export default function Navbar() {
       {/* Top bar */}
       {showPromo && (
         <div className="bg-veltrix-blue text-veltrix-black py-2 px-4 relative text-center text-[10px] sm:text-xs font-extrabold tracking-wide flex justify-center items-center gap-2">
-          <span>🚀 CARRYGOEXPRESS • FREE EXPRESS DELIVERY ON ORDERS ABOVE ₦100,000 • SAME-DAY IN LAGOS</span>
+          <span>🚀 CARRYGOEXPRESS • FREE EXPRESS DELIVERY ON ORDERS ABOVE $100 • FAST SECURE SHIPPING</span>
           <button 
             onClick={dismissPromo}
             className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-black/10 rounded-full transition-colors"

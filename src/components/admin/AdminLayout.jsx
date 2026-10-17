@@ -7,6 +7,7 @@ import {
   Globe, Activity
 } from 'lucide-react'
 import { useAdminStore } from '../../hooks/useAdminStore'
+import { useAuthStore } from '../../hooks/useStore'
 import { signOut } from '../../lib/supabase'
 
 const menuItems = [
@@ -31,6 +32,7 @@ export default function AdminLayout() {
   const [profileOpen, setProfileOpen] = useState(false)
   const location = useLocation()
   const navigate = useNavigate()
+  const { logout } = useAuthStore()
 
   const {
     stats,
@@ -57,7 +59,11 @@ export default function AdminLayout() {
   }, [location.pathname])
 
   const handleLogout = async () => {
-    await signOut()
+    try {
+      await logout()
+    } catch {
+      await signOut()
+    }
     navigate('/login')
   }
 

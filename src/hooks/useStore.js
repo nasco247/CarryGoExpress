@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { supabase, getCurrentUser } from '../lib/supabase'
+import { supabase, getCurrentUser, signOut } from '../lib/supabase'
 
 // ─── Auth Store ───────────────────────────────────────────────────────────────
 export const useAuthStore = create((set, get) => ({
@@ -10,8 +10,17 @@ export const useAuthStore = create((set, get) => ({
 
   initialize: async () => {
     console.log('[Auth] Initializing auth store...')
+    // Safety fallback: never keep user waiting more than 2.5 seconds
+    const safetyTimer = setTimeout(() => {
+      if (get().isLoading) {
+        console.warn('[Auth] Initialization safety timeout reached (2500ms)')
+        set({ isLoading: false })
+      }
+    }, 2500)
+
     try {
       const user = await getCurrentUser()
+      clearTimeout(safetyTimer)
       console.log('[Auth] Current user:', user?.id || 'none')
 
       if (user) {
@@ -19,10 +28,10 @@ export const useAuthStore = create((set, get) => ({
           .from('profiles')
           .select('*')
           .eq('id', user.id)
-          .single()
+          .maybeSingle()
 
-        if (error && error.code !== 'PGRST116') {
-          console.error('[Auth] Failed to fetch profile:', error)
+        if (error) {
+          console.warn('[Auth] Profile fetch notice:', error.message)
         }
         set({ user, profile: profile || null, isLoading: false })
       } else {
@@ -40,13 +49,14 @@ export const useAuthStore = create((set, get) => ({
             .from('profiles')
             .select('*')
             .eq('id', currentUser.id)
-            .single()
+            .maybeSingle()
           set({ profile: profile || null })
         } else {
           set({ profile: null })
         }
       })
     } catch (err) {
+      clearTimeout(safetyTimer)
       console.error('[Auth] Initialization error:', err)
       set({ isLoading: false })
     }
@@ -60,18 +70,23 @@ export const useAuthStore = create((set, get) => ({
       .from('profiles')
       .select('*')
       .eq('id', user.id)
-      .single()
+      .maybeSingle()
     if (error) {
-      console.error('[Auth] Profile refresh error:', error)
+      console.warn('[Auth] Profile refresh warning:', error.message)
       return
     }
-    set({ profile })
+    set({ profile: profile || null })
   },
 
   setUser: (user) => set({ user }),
-  logout: () => {
-    console.log('[Auth] Logging out user')
-    set({ user: null, profile: null })
+  logout: async () => {
+    console.log('[Auth] Complete signout initiated')
+    try {
+      await signOut()
+    } catch (e) {
+      console.warn('[Auth] Signout caught error:', e)
+    }
+    set({ user: null, profile: null, isLoading: false })
   }
 }))
 

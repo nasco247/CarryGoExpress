@@ -5,12 +5,14 @@ export function cn(...inputs) {
   return twMerge(clsx(inputs))
 }
 
-export function formatPrice(price, currency = 'NGN') {
-  return new Intl.NumberFormat('en-NG', {
+export function formatPrice(price, currency = 'USD') {
+  const num = typeof price === 'number' ? price : parseFloat(price) || 0
+  return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency,
-    minimumFractionDigits: 0
-  }).format(price)
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2
+  }).format(num)
 }
 
 export function truncate(str, length = 50) {

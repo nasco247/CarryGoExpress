@@ -48,13 +48,50 @@ export const signIn = async (email, password) => {
 }
 
 export const signOut = async () => {
-  const { error } = await supabase.auth.signOut()
-  return { error }
+  try {
+    const { error } = await supabase.auth.signOut()
+    // Explicitly wipe all supabase session tokens from localStorage
+    if (typeof window !== 'undefined') {
+      try {
+        const keysToRemove = []
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i)
+          if (key && (key.startsWith('sb-') || key.includes('supabase.auth.token') || key.includes('carrygo-auth'))) {
+            keysToRemove.push(key)
+          }
+        }
+        keysToRemove.forEach(k => localStorage.removeItem(k))
+      } catch (e) {
+        console.warn('[signOut] LocalStorage cleanup warning:', e)
+      }
+    }
+    return { error: null }
+  } catch (err) {
+    console.warn('[signOut] Caught signOut error, wiping local tokens anyway:', err)
+    if (typeof window !== 'undefined') {
+      try {
+        const keysToRemove = []
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i)
+          if (key && (key.startsWith('sb-') || key.includes('supabase.auth.token') || key.includes('carrygo-auth'))) {
+            keysToRemove.push(key)
+          }
+        }
+        keysToRemove.forEach(k => localStorage.removeItem(k))
+      } catch (e) {
+        console.warn('[signOut] LocalStorage cleanup error:', e)
+      }
+    }
+    return { error: null }
+  }
 }
 
 export const getCurrentUser = async () => {
   try {
-    const { data: { user } } = await supabase.auth.getUser()
+    // 3.5-second timeout to prevent indefinite hangs
+    const userPromise = supabase.auth.getUser().then(res => res.data?.user || null)
+    const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(null), 3500))
+    const user = await Promise.race([userPromise, timeoutPromise])
     return user
   } catch {
     return null
@@ -106,8 +143,18 @@ export const getProducts = async (filters = {}) => {
     query = query.range(start, start + limit - 1)
   }
 
-  const { data, error, count } = await query
-  return { data: data || [], error, count: count || (data ? data.length : 0) }
+  // 5-second timeout protection so UI never hangs indefinitely
+  try {
+    const queryPromise = query
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Product query timeout after 5s')), 5000)
+    )
+    const { data, error, count } = await Promise.race([queryPromise, timeoutPromise])
+    return { data: data || [], error, count: count || (data ? data.length : 0) }
+  } catch (err) {
+    console.warn('[getProducts] Query timeout or network error:', err.message)
+    return { data: [], error: err, count: 0 }
+  }
 }
 
 export const getProductById = async (id) => {

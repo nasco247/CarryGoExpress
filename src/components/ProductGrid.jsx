@@ -17,12 +17,12 @@ export default function ProductGrid({ filters = {}, hideSidebar = false, hideHea
   const [sortBy, setSortBy] = useState('name:asc')
   const [showFilters, setShowFilters] = useState(false)
 
-  const [priceRange, setPriceRange] = useState([0, 5000000])
+  const [priceRange, setPriceRange] = useState([0, 5000])
   const [selectedBrands, setSelectedBrands] = useState(filters.brand ? [filters.brand] : [])
   const [selectedCategories, setSelectedCategories] = useState(filters.category ? [filters.category] : [])
   const [selectedSubcategories, setSelectedSubcategories] = useState(filters.subcategory ? [filters.subcategory] : [])
 
-  const { products, loading, error, totalCount } = useProducts({
+  const { products, loading, error, totalCount, refetch } = useProducts({
     ...filters,
     brand: selectedBrands.length > 0 ? selectedBrands : undefined,
     category: selectedCategories.length > 0 ? selectedCategories : undefined,
@@ -113,14 +113,15 @@ export default function ProductGrid({ filters = {}, hideSidebar = false, hideHea
               <input
                 type="range"
                 min="0"
-                max="2000000"
+                max="5000"
+                step="50"
                 value={priceRange[1]}
                 onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value)])}
                 className="w-full accent-veltrix-blue"
               />
               <div className="flex items-center justify-between text-sm text-veltrix-gray-400">
-                <span>₦{priceRange[0].toLocaleString()}</span>
-                <span>₦{priceRange[1].toLocaleString()}</span>
+                <span>${priceRange[0].toLocaleString()}</span>
+                <span>${priceRange[1].toLocaleString()}</span>
               </div>
             </div>
           </div>
@@ -229,25 +230,70 @@ export default function ProductGrid({ filters = {}, hideSidebar = false, hideHea
         {/* Product Grid */}
         <div className="flex-1">
           {loading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[...Array(6)].map((_, i) => (
-                <div key={i} className="bg-veltrix-black-light rounded-2xl border border-veltrix-gray-800/50 overflow-hidden animate-pulse">
-                  <div className="aspect-square bg-veltrix-gray-800" />
-                  <div className="p-5 space-y-3">
-                    <div className="h-4 bg-veltrix-gray-800 rounded w-3/4" />
-                    <div className="h-4 bg-veltrix-gray-800 rounded w-1/2" />
-                    <div className="h-6 bg-veltrix-gray-800 rounded w-1/3" />
+            <div>
+              <div className="flex items-center justify-center gap-2 mb-6 py-2 px-4 bg-veltrix-blue/10 border border-veltrix-blue/20 rounded-xl text-veltrix-blue text-xs w-fit mx-auto animate-pulse">
+                <span className="w-2 h-2 rounded-full bg-veltrix-blue animate-ping" />
+                Connecting to live product database...
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[...Array(6)].map((_, i) => (
+                  <div key={i} className="bg-veltrix-black-light rounded-2xl border border-veltrix-gray-800/50 overflow-hidden animate-pulse">
+                    <div className="aspect-square bg-veltrix-gray-800" />
+                    <div className="p-5 space-y-3">
+                      <div className="h-4 bg-veltrix-gray-800 rounded w-3/4" />
+                      <div className="h-4 bg-veltrix-gray-800 rounded w-1/2" />
+                      <div className="h-6 bg-veltrix-gray-800 rounded w-1/3" />
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           ) : error ? (
-            <div className="text-center py-20">
-              <p className="text-veltrix-gray-400">Error loading products. Please try again.</p>
+            <div className="text-center py-16 bg-veltrix-black-light border border-red-500/20 rounded-2xl p-8">
+              <div className="w-12 h-12 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                <Filter className="w-6 h-6 text-red-400" />
+              </div>
+              <h3 className="text-lg font-bold text-white mb-1">Database Connection Notice</h3>
+              <p className="text-veltrix-gray-400 text-sm max-w-md mx-auto mb-5">{error}</p>
+              <button
+                onClick={() => refetch()}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-veltrix-blue text-black font-semibold text-sm rounded-xl hover:bg-veltrix-blue/90 transition-colors"
+              >
+                Retry Database Connection
+              </button>
             </div>
           ) : products.length === 0 ? (
-            <div className="text-center py-20">
-              <p className="text-veltrix-gray-400 text-lg">No products found matching your criteria.</p>
+            <div className="text-center py-16 bg-veltrix-black-light border border-veltrix-gray-800 rounded-2xl p-8">
+              <div className="w-16 h-16 bg-veltrix-gray-900 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <Grid3X3 className="w-8 h-8 text-veltrix-gray-600" />
+              </div>
+              <h3 className="text-lg font-bold text-white mb-2">No Products in Database</h3>
+              <p className="text-veltrix-gray-400 text-sm max-w-md mx-auto mb-6">
+                {selectedBrands.length > 0 || selectedCategories.length > 0 || selectedSubcategories.length > 0 || priceRange[1] < 5000
+                  ? 'No products match your selected filters. Try clearing your filters or widening your price range.'
+                  : 'Products added by admin in the database will appear here in real time.'}
+              </p>
+              <div className="flex items-center justify-center gap-3">
+                {(selectedBrands.length > 0 || selectedCategories.length > 0 || selectedSubcategories.length > 0 || priceRange[1] < 5000) && (
+                  <button
+                    onClick={() => {
+                      setSelectedBrands([])
+                      setSelectedCategories([])
+                      setSelectedSubcategories([])
+                      setPriceRange([0, 5000])
+                    }}
+                    className="px-4 py-2 text-sm border border-veltrix-gray-700 text-veltrix-gray-300 hover:text-white rounded-xl transition-colors"
+                  >
+                    Reset Filters
+                  </button>
+                )}
+                <button
+                  onClick={() => refetch()}
+                  className="px-4 py-2 text-sm bg-veltrix-blue text-black font-bold rounded-xl hover:bg-veltrix-blue/90 transition-colors"
+                >
+                  Refresh Database
+                </button>
+              </div>
             </div>
           ) : (
             <div className={`grid gap-6 ${

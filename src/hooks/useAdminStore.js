@@ -179,7 +179,7 @@ export const useAdminStore = create((set, get) => ({
               id: payload.new.id || Date.now().toString(),
               type: 'order',
               title: 'New Customer Order Placed',
-              message: `Order #${(payload.new.id || '').slice(0, 8)} for ₦${Number(payload.new.total_amount || 0).toLocaleString()} placed by ${payload.new.customer_name || 'Customer'}`,
+              message: `Order #${(payload.new.id || '').slice(0, 8)} for $${Number(payload.new.total_amount || 0).toLocaleString()} placed by ${payload.new.customer_name || 'Customer'}`,
               timestamp: new Date()
             })
           } else if (payload.eventType === 'UPDATE') {
@@ -223,7 +223,7 @@ export const useAdminStore = create((set, get) => ({
               id: Date.now().toString(),
               type: 'product',
               title: 'Product Stock/Price Updated',
-              message: `${payload.new.name}: Stock is now ${payload.new.stock ?? 'N/A'}, Price ₦${Number(payload.new.price || 0).toLocaleString()}`,
+              message: `${payload.new.name}: Stock is now ${payload.new.stock ?? 'N/A'}, Price $${Number(payload.new.price || 0).toLocaleString()}`,
               timestamp: new Date()
             })
           } else if (payload.eventType === 'DELETE') {
@@ -275,7 +275,7 @@ export const useAdminStore = create((set, get) => ({
               id: payload.new.id || Date.now().toString(),
               type: 'deposit',
               title: 'New Transaction / Deposit',
-              message: `₦${Number(payload.new.amount || 0).toLocaleString()} ${payload.new.type} (${payload.new.status})`,
+              message: `$${Number(payload.new.amount || 0).toLocaleString()} ${payload.new.type} (${payload.new.status})`,
               timestamp: new Date()
             })
           } else if (payload.eventType === 'UPDATE') {

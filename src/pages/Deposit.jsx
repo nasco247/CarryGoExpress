@@ -9,14 +9,14 @@ import { useAuthStore, useTransactionStore } from '../hooks/useStore'
 import { formatPrice } from '../lib/utils'
 
 // ─── How this page works ─────────────────────────────────────────────────────
-// 1. User selects or types a custom deposit amount (min ₦100)
+// 1. User selects or types a custom deposit amount (min $5)
 // 2. Clicking "Deposit Now" opens the Paystack test payment modal
 // 3. On successful payment, the reference is saved to Supabase `transactions`
 // 4. Wallet balance is updated automatically in the Transactions store
 // 5. TEST CARD: 4084 0840 8408 4081 | Exp: Any future date | CVV: 408 | PIN: 0000
 // ──────────────────────────────────────────────────────────────────────────────
 
-const PRESET_AMOUNTS = [1000, 5000, 10000, 25000, 50000, 100000]
+const PRESET_AMOUNTS = [25, 50, 100, 250, 500, 1000]
 
 const PAYSTACK_PUBLIC_KEY = import.meta.env.VITE_PAYSTACK_PUBLIC_KEY || 'pk_test_xxxxxx'
 
@@ -42,9 +42,9 @@ export default function Deposit() {
   const config = {
     reference: `VLX-${Date.now()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`,
     email: user.email,
-    amount: selectedAmount * 100, // Paystack expects kobo
+    amount: Math.round(selectedAmount * 100), // cents
     publicKey: PAYSTACK_PUBLIC_KEY,
-    currency: 'NGN',
+    currency: 'USD',
     metadata: {
       custom_fields: [
         { display_name: 'User ID', variable_name: 'user_id', value: user.id },
@@ -98,12 +98,12 @@ export default function Deposit() {
     setError(null)
     setSuccess(null)
 
-    if (selectedAmount < 100) {
-      setError('Minimum deposit amount is ₦100')
+    if (selectedAmount < 5) {
+      setError('Minimum deposit amount is $5')
       return
     }
-    if (selectedAmount > 5000000) {
-      setError('Maximum single deposit is ₦5,000,000')
+    if (selectedAmount > 10000) {
+      setError('Maximum single deposit is $10,000')
       return
     }
 
@@ -206,10 +206,10 @@ export default function Deposit() {
             {/* Custom Amount */}
             <div>
               <label className="block text-xs font-semibold text-veltrix-gray-400 uppercase tracking-wider mb-2">
-                Or Enter Custom Amount (₦)
+                Or Enter Custom Amount ($)
               </label>
               <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-veltrix-gray-400 font-semibold">₦</span>
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-veltrix-gray-400 font-semibold">$</span>
                 <input
                   type="text"
                   value={customAmount}
@@ -218,7 +218,7 @@ export default function Deposit() {
                   className="w-full pl-8 pr-4 py-3 bg-veltrix-black border border-veltrix-gray-700 rounded-xl text-white text-right text-lg font-bold placeholder-veltrix-gray-600 focus:outline-none focus:border-veltrix-blue transition-colors"
                 />
               </div>
-              <p className="text-xs text-veltrix-gray-500 mt-1">Minimum: ₦100 · Maximum: ₦5,000,000</p>
+              <p className="text-xs text-veltrix-gray-500 mt-1">Minimum: $5 · Maximum: $10,000</p>
             </div>
 
             {/* Summary */}
@@ -230,7 +230,7 @@ export default function Deposit() {
                 </div>
                 <div className="flex justify-between items-center mt-1">
                   <span className="text-xs text-veltrix-gray-500">Processing fee</span>
-                  <span className="text-xs text-green-400 font-medium">₦0 (Covered by us)</span>
+                  <span className="text-xs text-green-400 font-medium">$0 (Covered by us)</span>
                 </div>
               </div>
             )}

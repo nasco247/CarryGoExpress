@@ -255,7 +255,7 @@ export default function AdminDashboard() {
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
                 <span className="w-3 h-3 rounded-full bg-veltrix-blue" />
-                <span className="text-xs text-veltrix-gray-400">Revenue (₦)</span>
+                <span className="text-xs text-veltrix-gray-400">Revenue ($)</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="w-3 h-3 rounded-full bg-purple-500" />

@@ -72,9 +72,9 @@ export default function Checkout() {
   const paystackConfig = {
     reference: `CGO-ORD-${Date.now()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`,
     email: user?.email || '',
-    amount: totalAmount * 100, // kobo
+    amount: Math.round(totalAmount * 100), // cents
     publicKey: PAYSTACK_PUBLIC_KEY,
-    currency: 'NGN',
+    currency: 'USD',
     metadata: {
       custom_fields: [
         { display_name: 'User ID', variable_name: 'user_id', value: user?.id },

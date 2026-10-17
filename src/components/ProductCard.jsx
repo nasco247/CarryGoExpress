@@ -98,31 +98,47 @@ export default function ProductCard({ product }) {
           </span>
         </div>
 
-        {/* Price */}
-        <div className="flex items-center gap-3">
-          <span className="text-lg font-bold text-veltrix-blue">
-            {formatPrice(product.price)}
-          </span>
-          {product.original_price && (
-            <span className="text-sm text-veltrix-gray-500 line-through">
-              {formatPrice(product.original_price)}
-            </span>
-          )}
-        </div>
+        {/* Price & Mobile Add to Cart */}
+        <div className="flex items-center justify-between gap-2 mt-2">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-base sm:text-lg font-bold text-veltrix-blue">
+                {formatPrice(product.price)}
+              </span>
+              {product.original_price && (
+                <span className="text-xs text-veltrix-gray-500 line-through">
+                  {formatPrice(product.original_price)}
+                </span>
+              )}
+            </div>
+            {/* Stock Status */}
+            <div className="mt-1">
+              {product.in_stock ? (
+                <span className="text-[11px] text-green-400 font-medium flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 bg-green-400 rounded-full" />
+                  In Stock
+                </span>
+              ) : (
+                <span className="text-[11px] text-red-400 font-medium flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 bg-red-400 rounded-full" />
+                  Out of Stock
+                </span>
+              )}
+            </div>
+          </div>
 
-        {/* Stock Status */}
-        <div className="mt-3">
-          {product.in_stock ? (
-            <span className="text-xs text-green-400 font-medium flex items-center gap-1">
-              <span className="w-1.5 h-1.5 bg-green-400 rounded-full" />
-              In Stock
-            </span>
-          ) : (
-            <span className="text-xs text-red-400 font-medium flex items-center gap-1">
-              <span className="w-1.5 h-1.5 bg-red-400 rounded-full" />
-              Out of Stock
-            </span>
-          )}
+          <button
+            onClick={(e) => {
+              e.preventDefault()
+              if (product.in_stock !== false) addItem(product)
+            }}
+            disabled={product.in_stock === false}
+            className="md:hidden flex items-center justify-center w-9 h-9 bg-veltrix-blue text-veltrix-black rounded-xl font-bold shadow-glow active:scale-90 transition-all disabled:opacity-40 shrink-0"
+            aria-label="Add to cart"
+            title="Add to cart"
+          >
+            <ShoppingCart className="w-4 h-4" />
+          </button>
         </div>
       </div>
     </div>

@@ -34,6 +34,7 @@ import AdminRestrictions from './pages/admin/Restrictions'
 import AdminNotifications from './pages/admin/Notifications'
 import AdminSettings from './pages/admin/Settings'
 import AdminVisitors from './pages/admin/Visitors'
+import AdminEmails from './pages/admin/Emails'
 import VisitorTracker from './components/VisitorTracker'
 
 // ── Shared Layout Wrapper ────────────────────────────────────────────────────
@@ -199,10 +200,11 @@ export default function App() {
           </ProtectedRoute>
         }>
           <Route index element={<AdminDashboard />} />
-          <Route path="users" element={<AdminUsers />} />
-          <Route path="products" element={<AdminProducts />} />
-          <Route path="visitors" element={<AdminVisitors />} />
           <Route path="orders" element={<AdminOrders />} />
+          <Route path="products" element={<AdminProducts />} />
+          <Route path="emails" element={<AdminEmails />} />
+          <Route path="visitors" element={<AdminVisitors />} />
+          <Route path="users" element={<AdminUsers />} />
           <Route path="deposits" element={<AdminDeposits />} />
           <Route path="restrictions" element={<AdminRestrictions />} />
           <Route path="notifications" element={<AdminNotifications />} />

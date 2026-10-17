@@ -50,6 +50,20 @@ export const useAdminStore = create((set, get) => ({
   notifications: [],
   liveEvents: [],
   visits: [],
+  inboundEmails: [],
+  outboundEmails: [],
+  forwardingSettings: {
+    destinationEmail: 'admin@carrygoexpress.store',
+    isEnabled: true,
+    forwardInquiries: true,
+    forwardOrders: true,
+    forwardDeposits: true,
+    preserveReplyTo: true,
+    smtpServer: 'mail.privateemail.com',
+    smtpPort: 465,
+    smtpSecure: true,
+    officialFrom: 'support@carrygoexpress.store'
+  },
 
   toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen })),
   setActiveTab: (tab) => set({ activeTab: tab }),
@@ -484,17 +498,195 @@ export const useAdminStore = create((set, get) => ({
       notifications: state.notifications.filter(n => n.id !== id)
     })),
 
-  // ── Quick Seed Starter Products ───────────────────────────────────────────
-  seedStarterCatalog: async () => {
-    set({ isLoading: true })
+  // ── Email Management & Forwarding Actions ────────────────────────────────
+  initEmails: () => {
     try {
-      const { data, error } = await supabase.from('products').insert(CARRYGO_STARTER_PRODUCTS).select()
-      if (error) {
-        console.warn('[useAdminStore] Seed error:', error)
-      }
-      await get().fetchDashboardData()
-    } finally {
-      set({ isLoading: false })
+      if (typeof window === 'undefined') return
+      const rawInbound = localStorage.getItem('carrygo_inbound_emails')
+      const rawOutbound = localStorage.getItem('carrygo_outbound_emails')
+      const rawForwarding = localStorage.getItem('carrygo_email_forwarding')
+
+      const starterInbound = [
+        {
+          id: 'in-101',
+          senderName: 'David Okafor',
+          senderEmail: 'david.okafor@techvault.ng',
+          subject: 'Bulk Procurement Inquiry: 5x iPhone 16 Pro Max 256GB',
+          category: 'Sales & Bulk',
+          receivedAt: new Date(Date.now() - 1000 * 60 * 35).toISOString(),
+          read: false,
+          forwardedTo: 'admin@carrygoexpress.store',
+          body: `Good day CarryGoExpress Support Team,
+
+We are looking to equip our senior design engineers with 5 units of the iPhone 16 Pro Max (Natural Titanium, 256GB). Could you kindly confirm immediate stock availability at your Victoria Island fulfillment center? Also, do you offer corporate invoice terms or a volume discount for upfront payment?
+
+Looking forward to your swift response.
+
+Best regards,
+David Okafor
+Head of Procurement, TechVault Nigeria`,
+          replyTo: 'david.okafor@techvault.ng'
+        },
+        {
+          id: 'in-102',
+          senderName: 'Sarah Jenkins',
+          senderEmail: 'sjenkins.creative@gmail.com',
+          subject: 'Delivery Tracking Status Inquiry - MacBook M3 Pro',
+          category: 'Orders',
+          receivedAt: new Date(Date.now() - 1000 * 60 * 120).toISOString(),
+          read: true,
+          forwardedTo: 'admin@carrygoexpress.store',
+          body: `Hello CarryGoExpress,
+
+I placed an order earlier today for the 16-inch Apple MacBook Pro M3. The tracking indicates it is prepared for dispatch. Could you kindly let me know if express delivery will arrive before 5:00 PM today?
+
+Thank you so much,
+Sarah Jenkins`,
+          replyTo: 'sjenkins.creative@gmail.com'
+        },
+        {
+          id: 'in-103',
+          senderName: 'Michael Adebayo',
+          senderEmail: 'm.adebayo92@yahoo.com',
+          subject: 'Question on PlayStation 5 Pro Warranty & In-Box Accessories',
+          category: 'Support',
+          receivedAt: new Date(Date.now() - 1000 * 60 * 360).toISOString(),
+          read: true,
+          forwardedTo: 'admin@carrygoexpress.store',
+          body: `Hi there,
+
+Does the PlayStation 5 Pro console listed in your store come with the official 1-year Sony manufacturer warranty covered locally in Lagos? Also, is an extra DualSense wireless controller included in this package?
+
+Kind regards,
+Michael Adebayo`,
+          replyTo: 'm.adebayo92@yahoo.com'
+        }
+      ]
+
+      const starterOutbound = [
+        {
+          id: 'out-201',
+          recipient: 'sjenkins.creative@gmail.com',
+          recipientName: 'Sarah Jenkins',
+          subject: 'Out for Delivery: Your CarryGoExpress Package is on the Way! 🚚',
+          templateId: 'shipping_dispatched',
+          sentAt: new Date(Date.now() - 1000 * 60 * 45).toISOString(),
+          status: 'Delivered',
+          body: `Hello Sarah Jenkins,\n\nGreat news! Your MacBook M3 Pro order has been handed over to our dedicated express courier and is currently out for delivery to your designated address.\n\nAssigned Courier: CarryGoExpress Direct Dispatch\nETA: Today before 4:30 PM.\n\nBest regards,\nCarryGoExpress Logistics Operations`
+        }
+      ]
+
+      const inbound = rawInbound ? JSON.parse(rawInbound) : starterInbound
+      const outbound = rawOutbound ? JSON.parse(rawOutbound) : starterOutbound
+      const forwarding = rawForwarding ? JSON.parse(rawForwarding) : get().forwardingSettings
+
+      set({ inboundEmails: inbound, outboundEmails: outbound, forwardingSettings: forwarding })
+    } catch (e) {
+      console.warn('[useAdminStore] Error initializing emails:', e)
     }
+  },
+
+  addInboundEmail: (emailData) => {
+    const state = get()
+    const newEmail = {
+      id: 'in-' + Date.now(),
+      senderName: emailData.senderName || 'Customer',
+      senderEmail: emailData.senderEmail,
+      subject: emailData.subject || 'New Contact Inquiry',
+      category: emailData.category || 'Customer Inquiries',
+      receivedAt: new Date().toISOString(),
+      read: false,
+      forwardedTo: state.forwardingSettings.isEnabled ? state.forwardingSettings.destinationEmail : null,
+      body: emailData.body,
+      replyTo: emailData.senderEmail
+    }
+
+    const updated = [newEmail, ...state.inboundEmails]
+    set({ inboundEmails: updated })
+    try {
+      localStorage.setItem('carrygo_inbound_emails', JSON.stringify(updated))
+    } catch {}
+
+    state.addEvent({
+      id: Date.now().toString(),
+      type: 'email',
+      title: 'Inbound Email Received',
+      message: `From ${newEmail.senderEmail}: "${newEmail.subject}"${state.forwardingSettings.isEnabled ? ` (Forwarded to ${state.forwardingSettings.destinationEmail})` : ''}`,
+      timestamp: new Date()
+    })
+    return newEmail
+  },
+
+  markEmailAsRead: (id) => {
+    set((state) => {
+      const updated = state.inboundEmails.map(em => em.id === id ? { ...em, read: true } : em)
+      try {
+        localStorage.setItem('carrygo_inbound_emails', JSON.stringify(updated))
+      } catch {}
+      return { inboundEmails: updated }
+    })
+  },
+
+  deleteInboundEmail: (id) => {
+    set((state) => {
+      const updated = state.inboundEmails.filter(em => em.id !== id)
+      try {
+        localStorage.setItem('carrygo_inbound_emails', JSON.stringify(updated))
+      } catch {}
+      return { inboundEmails: updated }
+    })
+  },
+
+  sendOutboundEmail: (outboundData) => {
+    const state = get()
+    const newOutbound = {
+      id: 'out-' + Date.now(),
+      recipient: outboundData.recipient,
+      recipientName: outboundData.recipientName || outboundData.recipient.split('@')[0],
+      subject: outboundData.subject,
+      templateId: outboundData.templateId || 'custom',
+      sentAt: new Date().toISOString(),
+      status: 'Delivered',
+      from: 'support@carrygoexpress.store',
+      body: outboundData.body,
+      ctaText: outboundData.ctaText || 'View Details',
+      ctaUrl: outboundData.ctaUrl || 'https://www.carrygoexpress.store/'
+    }
+
+    const updated = [newOutbound, ...state.outboundEmails]
+    set({ outboundEmails: updated })
+    try {
+      localStorage.setItem('carrygo_outbound_emails', JSON.stringify(updated))
+    } catch {}
+
+    state.addEvent({
+      id: Date.now().toString(),
+      type: 'email',
+      title: 'Outbound Email Sent via support@carrygoexpress.store',
+      message: `Sent to ${newOutbound.recipient}: "${newOutbound.subject}"`,
+      timestamp: new Date()
+    })
+
+    return newOutbound
+  },
+
+  deleteOutboundEmail: (id) => {
+    set((state) => {
+      const updated = state.outboundEmails.filter(em => em.id !== id)
+      try {
+        localStorage.setItem('carrygo_outbound_emails', JSON.stringify(updated))
+      } catch {}
+      return { outboundEmails: updated }
+    })
+  },
+
+  updateForwardingSettings: (newSettings) => {
+    set((state) => {
+      const updated = { ...state.forwardingSettings, ...newSettings }
+      try {
+        localStorage.setItem('carrygo_email_forwarding', JSON.stringify(updated))
+      } catch {}
+      return { forwardingSettings: updated }
+    })
   }
 }))

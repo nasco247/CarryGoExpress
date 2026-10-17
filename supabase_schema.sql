@@ -386,13 +386,35 @@ FROM (VALUES
 WHERE NOT EXISTS (SELECT 1 FROM public.products LIMIT 1);
 
 -- ============================================================
--- ── 8. CarryGoExpress Admin User Setup & Instant Provisioning ──
--- Run this block in Supabase SQL Editor to provision your Admin.
+-- ── 8. CarryGoExpress Admin User Setup & Schema Repair ──
+-- Run this block in Supabase SQL Editor to provision your Admin
+-- and repair any NULL token scan errors in auth.users.
 --
 -- Default Admin Credentials:
 -- Email:    admin@carrygoexpress.com
 -- Password: REDACTED_ADMIN_PASSWORD
 -- ============================================================
+
+-- Repair any existing rows in auth.users that have NULL token strings
+-- (Prevents GoTrue "500: Database error querying schema" scan errors)
+DO $$
+BEGIN
+  UPDATE auth.users
+  SET 
+    confirmation_token = COALESCE(confirmation_token, ''),
+    recovery_token = COALESCE(recovery_token, ''),
+    email_change_token_new = COALESCE(email_change_token_new, ''),
+    email_change = COALESCE(email_change, ''),
+    email_change_token_current = COALESCE(email_change_token_current, ''),
+    phone = COALESCE(phone, ''),
+    phone_change = COALESCE(phone_change, ''),
+    phone_change_token = COALESCE(phone_change_token, '')
+  WHERE confirmation_token IS NULL OR recovery_token IS NULL OR email = 'admin@carrygoexpress.com';
+EXCEPTION
+  WHEN OTHERS THEN
+    NULL;
+END $$;
+
 DO $$
 DECLARE
   v_admin_id UUID := gen_random_uuid();
@@ -412,7 +434,15 @@ BEGIN
       raw_app_meta_data,
       raw_user_meta_data,
       created_at,
-      updated_at
+      updated_at,
+      confirmation_token,
+      recovery_token,
+      email_change_token_new,
+      email_change,
+      email_change_token_current,
+      phone,
+      phone_change,
+      phone_change_token
     ) VALUES (
       '00000000-0000-0000-0000-000000000000',
       v_admin_id,
@@ -424,7 +454,15 @@ BEGIN
       '{"provider":"email","providers":["email"]}',
       '{"full_name":"CarryGo Administrator","role":"admin"}',
       NOW(),
-      NOW()
+      NOW(),
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      ''
     );
 
     INSERT INTO public.profiles (id, full_name, email, role, status)
@@ -437,10 +475,18 @@ BEGIN
     )
     ON CONFLICT (id) DO UPDATE SET role = 'admin', status = 'active';
   ELSE
-    -- If admin already exists in auth.users, ensure confirmed and admin role
+    -- If admin already exists in auth.users, ensure confirmed, non-null tokens and admin role
     UPDATE auth.users 
     SET raw_user_meta_data = COALESCE(raw_user_meta_data, '{}'::jsonb) || '{"role": "admin"}'::jsonb,
-        email_confirmed_at = COALESCE(email_confirmed_at, NOW())
+        email_confirmed_at = COALESCE(email_confirmed_at, NOW()),
+        confirmation_token = COALESCE(confirmation_token, ''),
+        recovery_token = COALESCE(recovery_token, ''),
+        email_change_token_new = COALESCE(email_change_token_new, ''),
+        email_change = COALESCE(email_change, ''),
+        email_change_token_current = COALESCE(email_change_token_current, ''),
+        phone = COALESCE(phone, ''),
+        phone_change = COALESCE(phone_change, ''),
+        phone_change_token = COALESCE(phone_change_token, '')
     WHERE email = v_admin_email;
 
     UPDATE public.profiles 

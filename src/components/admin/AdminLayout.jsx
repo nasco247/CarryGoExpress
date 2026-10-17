@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Users, Package, ShoppingCart, CreditCard, 
   Ban, Bell, Settings, LogOut, Menu, X, ChevronRight,
   TrendingUp, AlertTriangle, Shield, ExternalLink, Radio, RefreshCw,
-  Globe, Activity
+  Globe, Activity, Mail
 } from 'lucide-react'
 import { useAdminStore } from '../../hooks/useAdminStore'
 import { useAuthStore } from '../../hooks/useStore'
@@ -14,6 +14,7 @@ const menuItems = [
   { path: '/admin', icon: LayoutDashboard, label: 'Dashboard', badge: null },
   { path: '/admin/orders', icon: ShoppingCart, label: 'Live Orders', badge: 'orders' },
   { path: '/admin/products', icon: Package, label: 'Product Inventory', badge: 'products' },
+  { path: '/admin/emails', icon: Mail, label: 'Store Emails & AI', badge: 'emails' },
   { path: '/admin/visitors', icon: Globe, label: 'Visitor & IP Traffic', badge: 'visitors' },
   { path: '/admin/users', icon: Users, label: 'User Accounts', badge: 'users' },
   { path: '/admin/deposits', icon: CreditCard, label: 'Deposits & Finance', badge: 'deposits' },
@@ -37,6 +38,8 @@ export default function AdminLayout() {
   const {
     stats,
     notifications,
+    inboundEmails,
+    initEmails,
     realtimeConnected,
     fetchDashboardData,
     initRealtimeSubscription,
@@ -45,11 +48,12 @@ export default function AdminLayout() {
 
   useEffect(() => {
     fetchDashboardData()
+    if (typeof initEmails === 'function') initEmails()
     const unsubscribe = initRealtimeSubscription()
     return () => {
       if (typeof unsubscribe === 'function') unsubscribe()
     }
-  }, [fetchDashboardData, initRealtimeSubscription])
+  }, [fetchDashboardData, initRealtimeSubscription, initEmails])
 
   // Close sidebar on route change on mobile
   useEffect(() => {
@@ -76,6 +80,7 @@ export default function AdminLayout() {
       case 'restrictions': return stats.activeRestrictions || 0
       case 'visitors': return stats.activeVisitorsNow || 0
       case 'notifications': return notifications.filter(n => !n.read).length
+      case 'emails': return (inboundEmails || []).filter(e => !e.read).length
       default: return 0
     }
   }

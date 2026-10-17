@@ -1,6 +1,52 @@
 import { Link } from 'react-router-dom'
 import { MapPin, Mail, Facebook, Twitter, Instagram, Youtube, ArrowUp, Send, ShieldCheck } from 'lucide-react'
 
+function TikTokIcon({ className = "w-5 h-5" }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1.04-.1z" />
+    </svg>
+  )
+}
+
+const SOCIAL_LINKS = [
+  {
+    name: 'Instagram',
+    handle: '@carrygoexpresss',
+    href: import.meta.env.VITE_INSTAGRAM_URL || 'https://www.instagram.com/carrygoexpresss?exln=cDN2ZGY0cHJveDBn',
+    icon: Instagram,
+    hover: 'hover:text-pink-400 hover:border-pink-500/40 hover:bg-pink-500/10'
+  },
+  {
+    name: 'TikTok',
+    handle: '@carrygoexpress3',
+    href: import.meta.env.VITE_TIKTOK_URL || 'https://www.tiktok.com/@carrygoexpress3',
+    icon: TikTokIcon,
+    hover: 'hover:text-[#00f2fe] hover:border-[#00f2fe]/40 hover:bg-[#00f2fe]/10'
+  },
+  {
+    name: 'Facebook',
+    handle: 'CarryGoExpress',
+    href: '#',
+    icon: Facebook,
+    hover: 'hover:text-blue-400 hover:border-blue-500/40 hover:bg-blue-500/10'
+  },
+  {
+    name: 'Twitter',
+    handle: '@carrygoexpress',
+    href: '#',
+    icon: Twitter,
+    hover: 'hover:text-sky-400 hover:border-sky-500/40 hover:bg-sky-500/10'
+  },
+  {
+    name: 'Youtube',
+    handle: 'CarryGoExpress TV',
+    href: '#',
+    icon: Youtube,
+    hover: 'hover:text-red-400 hover:border-red-500/40 hover:bg-red-500/10'
+  }
+]
+
 export default function Footer() {
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -25,17 +71,23 @@ export default function Footer() {
             <p className="text-sm text-veltrix-gray-400 leading-relaxed">
               Your premier destination for genuine consumer electronics, 4K Smart TVs, and audio entertainment. Backed by manufacturer warranty and express nationwide delivery.
             </p>
-            <div className="flex gap-3">
-              {[Facebook, Twitter, Instagram, Youtube].map((Icon, i) => (
-                <a
-                  key={i}
-                  href="#"
-                  className="w-10 h-10 bg-veltrix-gray-900 rounded-lg flex items-center justify-center text-veltrix-gray-400 hover:text-veltrix-blue hover:bg-veltrix-blue/10 transition-all"
-                  aria-label="Social Link"
-                >
-                  <Icon className="w-5 h-5" />
-                </a>
-              ))}
+            <div>
+              <p className="text-xs font-semibold text-veltrix-gray-400 uppercase tracking-wider mb-3">Connect With Us</p>
+              <div className="flex flex-wrap gap-2.5">
+                {SOCIAL_LINKS.map((item) => (
+                  <a
+                    key={item.name}
+                    href={item.href}
+                    target={item.href.startsWith('http') ? '_blank' : undefined}
+                    rel={item.href.startsWith('http') ? 'noopener noreferrer' : undefined}
+                    className={`w-10 h-10 bg-veltrix-gray-900 border border-veltrix-gray-800 rounded-lg flex items-center justify-center text-veltrix-gray-400 transition-all ${item.hover}`}
+                    aria-label={`${item.name} - ${item.handle}`}
+                    title={`${item.name} (${item.handle})`}
+                  >
+                    <item.icon className="w-5 h-5" />
+                  </a>
+                ))}
+              </div>
             </div>
           </div>
 

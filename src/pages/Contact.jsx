@@ -1,6 +1,14 @@
 import { useState } from 'react'
-import { Mail, MapPin, MessageSquare, Clock, CheckCircle, Send } from 'lucide-react'
+import { Mail, MapPin, MessageSquare, Clock, CheckCircle, Send, Instagram, ExternalLink } from 'lucide-react'
 import { useAdminStore } from '../hooks/useAdminStore'
+
+function TikTokIcon({ className = "w-5 h-5" }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1.04-.1z" />
+    </svg>
+  )
+}
 
 export default function Contact() {
   const [name, setName] = useState('')
@@ -146,6 +154,51 @@ export default function Contact() {
                     <p className="text-veltrix-gray-400">CarryGoExpress Hub<br />123 Technology Drive, Victoria Island, Lagos<br />Nigeria</p>
                   </div>
                 </div>
+              </div>
+            </div>
+
+            {/* Social Media Channels */}
+            <div className="p-6 bg-veltrix-black-light border border-veltrix-gray-800 rounded-2xl">
+              <h3 className="font-bold text-white mb-2">Follow Us on Social Media</h3>
+              <p className="text-xs text-veltrix-gray-400 mb-4">
+                Watch our latest product unboxings, customer deliveries, and exclusive promotional drops.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <a
+                  href="https://www.instagram.com/carrygoexpresss?exln=cDN2ZGY0cHJveDBn"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-between p-3.5 bg-veltrix-black border border-veltrix-gray-800 hover:border-pink-500/50 rounded-xl group transition-all"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-lg bg-pink-500/10 text-pink-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <Instagram className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-white group-hover:text-pink-400 transition-colors">Instagram</p>
+                      <p className="text-[11px] text-veltrix-gray-400">@carrygoexpresss</p>
+                    </div>
+                  </div>
+                  <ExternalLink className="w-4 h-4 text-veltrix-gray-500 group-hover:text-pink-400 transition-colors" />
+                </a>
+
+                <a
+                  href="https://www.tiktok.com/@carrygoexpress3"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-between p-3.5 bg-veltrix-black border border-veltrix-gray-800 hover:border-[#00f2fe]/50 rounded-xl group transition-all"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-lg bg-[#00f2fe]/10 text-[#00f2fe] flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <TikTokIcon className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-white group-hover:text-[#00f2fe] transition-colors">TikTok</p>
+                      <p className="text-[11px] text-veltrix-gray-400">@carrygoexpress3</p>
+                    </div>
+                  </div>
+                  <ExternalLink className="w-4 h-4 text-veltrix-gray-500 group-hover:text-[#00f2fe] transition-colors" />
+                </a>
               </div>
             </div>
 

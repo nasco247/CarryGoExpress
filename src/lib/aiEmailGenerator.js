@@ -406,7 +406,7 @@ export function renderEmailHtml({ subject, body, recipientName, ctaText, ctaUrl 
         Sent officially from <strong>support@carrygoexpress.store</strong> | PrivateEmail Verified
       </p>
       <p style="margin: 0 0 8px 0;">
-        CarryGoExpress Central Hub, Victoria Island, Lagos, Nigeria · Registered Electronics Store
+        CarryGoExpress Central Hub, 2349 Brentwood Drive, Austin, TX 78749, United States · Registered Electronics Store
       </p>
       <p style="margin: 0;">
         This email was intended for the recipient. If you received this in error, please disregard.

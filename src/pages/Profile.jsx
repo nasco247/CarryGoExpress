@@ -388,7 +388,7 @@ export default function Profile() {
                         type="text"
                         value={form.full_name}
                         onChange={e => setForm(f => ({ ...f, full_name: e.target.value }))}
-                        placeholder="Enter your full name (e.g. John Doe)"
+                        placeholder="Enter your full name (e.g. John Smith)"
                         className="w-full pl-10 pr-4 py-3 bg-veltrix-black border border-veltrix-gray-700 rounded-xl text-white placeholder-veltrix-gray-600 focus:outline-none focus:border-veltrix-blue transition-colors text-sm"
                       />
                     </div>

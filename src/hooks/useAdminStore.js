@@ -517,14 +517,14 @@ export const useAdminStore = create((set, get) => ({
           forwardedTo: 'admin@carrygoexpress.store',
           body: `Good day CarryGoExpress Support Team,
 
-We are looking to equip our senior design engineers with 5 units of the iPhone 16 Pro Max (Natural Titanium, 256GB). Could you kindly confirm immediate stock availability at your Victoria Island fulfillment center? Also, do you offer corporate invoice terms or a volume discount for upfront payment?
+We are looking to equip our senior design engineers with 5 units of the iPhone 16 Pro Max (Natural Titanium, 256GB). Could you kindly confirm immediate stock availability at your Austin fulfillment center? Also, do you offer corporate invoice terms or a volume discount for upfront payment?
 
 Looking forward to your swift response.
 
 Best regards,
-David Okafor
-Head of Procurement, TechVault Nigeria`,
-          replyTo: 'david.okafor@techvault.ng'
+David Miller
+Head of Procurement, TechVault Solutions (Austin, TX)`,
+          replyTo: 'david.miller@techvault.com'
         },
         {
           id: 'in-102',
@@ -554,11 +554,11 @@ Sarah Jenkins`,
           forwardedTo: 'admin@carrygoexpress.store',
           body: `Hi there,
 
-Does the PlayStation 5 Pro console listed in your store come with the official 1-year Sony manufacturer warranty covered locally in Lagos? Also, is an extra DualSense wireless controller included in this package?
+Does the PlayStation 5 Pro console listed in your store come with the official 1-year Sony manufacturer warranty covered locally in the United States? Also, is an extra DualSense wireless controller included in this package?
 
 Kind regards,
-Michael Adebayo`,
-          replyTo: 'm.adebayo92@yahoo.com'
+Michael Davis`,
+          replyTo: 'm.davis92@gmail.com'
         }
       ]
 

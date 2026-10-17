@@ -331,7 +331,7 @@ export default function ProductDetail() {
           {activeTab === 'warranty & shipping' && (
             <div className="max-w-3xl space-y-4 text-veltrix-gray-300 text-sm leading-relaxed">
               <h3 className="font-bold text-white">Delivery Policy</h3>
-              <p>We deliver nationwide across Nigeria with same-day delivery available for Lagos orders confirmed before 12pm.</p>
+              <p>We deliver nationwide across the United States with expedited 1–2 day express delivery dispatched from our Austin, TX fulfillment center.</p>
               <h3 className="font-bold text-white">Official Warranty</h3>
               <p>Each unit comes with an official CarryGoExpress 24-month manufacturer warranty covering repair and part replacements.</p>
             </div>

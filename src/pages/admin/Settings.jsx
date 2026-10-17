@@ -111,7 +111,7 @@ export default function AdminSettings() {
                     <label className="font-semibold text-veltrix-gray-300">Delivery SLA</label>
                     <input 
                       type="text" 
-                      defaultValue="Same-day Lagos, 2-3 Days Nationwide"
+                      defaultValue="1-2 Days Express, 2-3 Days Nationwide (USA)"
                       className="input-field text-sm" 
                     />
                   </div>

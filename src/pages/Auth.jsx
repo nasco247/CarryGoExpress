@@ -130,7 +130,7 @@ export function Login() {
                   autoComplete="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="name@example.com"
+                  placeholder="e.g. johnsmith@example.com"
                   className="w-full h-12 pl-10 pr-4 bg-veltrix-black border border-veltrix-gray-700 rounded-xl text-white placeholder-veltrix-gray-600 focus:outline-none focus:border-veltrix-blue focus:ring-2 focus:ring-veltrix-blue/20 text-base sm:text-sm transition-all"
                 />
               </div>
@@ -447,7 +447,7 @@ export function Register() {
                     autoComplete="name"
                     value={formData.fullName}
                     onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                    placeholder="e.g. David Adeleke"
+                    placeholder="e.g. John Smith"
                     className="w-full h-12 pl-10 pr-4 bg-veltrix-black border border-veltrix-gray-700 rounded-xl text-white placeholder-veltrix-gray-600 focus:outline-none focus:border-veltrix-blue focus:ring-2 focus:ring-veltrix-blue/20 text-base sm:text-sm transition-all"
                   />
                 </div>
@@ -466,7 +466,7 @@ export function Register() {
                     autoComplete="email"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    placeholder="name@example.com"
+                    placeholder="e.g. johnsmith@example.com"
                     className="w-full h-12 pl-10 pr-4 bg-veltrix-black border border-veltrix-gray-700 rounded-xl text-white placeholder-veltrix-gray-600 focus:outline-none focus:border-veltrix-blue focus:ring-2 focus:ring-veltrix-blue/20 text-base sm:text-sm transition-all"
                   />
                 </div>

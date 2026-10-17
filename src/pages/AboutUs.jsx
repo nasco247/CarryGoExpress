@@ -14,7 +14,7 @@ export default function AboutUs() {
         <div className="absolute inset-0 flex items-center px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
           <div className="max-w-2xl">
             <h1 className="text-4xl lg:text-5xl font-extrabold text-white mb-4">About CarryGo<span className="text-veltrix-blue">Express</span></h1>
-            <p className="text-lg">Your premier destination for high-quality electronics, smart home entertainment, and swift nationwide delivery across Nigeria.</p>
+            <p className="text-lg">Your premier destination for high-quality electronics, smart home entertainment, and swift nationwide delivery across the United States.</p>
           </div>
         </div>
       </div>

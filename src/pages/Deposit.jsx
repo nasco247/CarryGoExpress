@@ -214,7 +214,7 @@ export default function Deposit() {
                   type="text"
                   value={customAmount}
                   onChange={handleCustomAmountChange}
-                  placeholder="0"
+                  placeholder="e.g. 250"
                   className="w-full pl-8 pr-4 py-3 bg-veltrix-black border border-veltrix-gray-700 rounded-xl text-white text-right text-lg font-bold placeholder-veltrix-gray-600 focus:outline-none focus:border-veltrix-blue transition-colors"
                 />
               </div>

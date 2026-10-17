@@ -64,7 +64,7 @@ export default function Home() {
           <form className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
             <input
               type="email"
-              placeholder="Enter your email"
+              placeholder="Enter your email (e.g. johnsmith@example.com)"
               className="flex-1 px-6 py-4 bg-veltrix-black-light border border-veltrix-gray-800 rounded-xl text-white placeholder-veltrix-gray-500 focus:border-veltrix-blue focus:outline-none focus:ring-1 focus:ring-veltrix-blue/50"
             />
             <button type="submit" className="px-8 py-4 bg-veltrix-blue text-veltrix-black font-bold rounded-xl hover:shadow-glow transition-all">

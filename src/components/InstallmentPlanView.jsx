@@ -11,53 +11,116 @@ export default function InstallmentPlanView({
   defaultExpanded = false,
   selectedPlanType = 'complete', // 'complete' | 'installment'
   selectedMonths = 12,
+  selectedFrequency = 'weekly', // 'weekly' | 'monthly'
   onPlanChange = null,
   showSelectButtons = false,
   className = ''
 }) {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded)
   const [activePlan, setActivePlan] = useState(selectedPlanType)
-  const [tenure, setTenure] = useState(selectedMonths)
+  const [frequency, setFrequency] = useState(selectedFrequency || 'weekly') // 'weekly' | 'monthly'
+  const [monthlyTenure, setMonthlyTenure] = useState(selectedMonths || 12)
+  const [weeklyTenure, setWeeklyTenure] = useState(4)
   const [showSchedule, setShowSchedule] = useState(false)
 
   const numPrice = typeof price === 'number' ? price : parseFloat(price) || 0
-  const monthlyAmount = tenure > 0 ? (numPrice / tenure) : numPrice
+  const isWeekly = frequency === 'weekly'
+  const currentCount = isWeekly ? weeklyTenure : monthlyTenure
+  const installmentAmount = currentCount > 0 ? (numPrice / currentCount) : numPrice
+  const minWeeklyAmount = numPrice / 24
   const minMonthlyAmount = numPrice / 12
 
-  // Month options up to a year
-  const TENURE_OPTIONS = [
-    { months: 3, label: '3 Months', note: 'Fastest Payoff' },
-    { months: 6, label: '6 Months', note: 'Popular' },
-    { months: 9, label: '9 Months', note: 'Flexible' },
-    { months: 12, label: '12 Months (1 Year)', note: 'Lowest Monthly' },
+  // Weekly installment options
+  const WEEKLY_OPTIONS = [
+    { count: 4, label: '4 Weeks', note: 'Pay in 4 (Popular)' },
+    { count: 8, label: '8 Weeks', note: '2 Months' },
+    { count: 12, label: '12 Weeks', note: '3 Months' },
+    { count: 24, label: '24 Weeks', note: 'Lowest Weekly' },
   ]
 
-  const handleSelectPlan = (plan, m = tenure) => {
+  // Monthly installment options up to a year
+  const MONTHLY_OPTIONS = [
+    { count: 3, label: '3 Months', note: 'Fastest Payoff' },
+    { count: 6, label: '6 Months', note: 'Popular' },
+    { count: 9, label: '9 Months', note: 'Flexible' },
+    { count: 12, label: '12 Months (1 Year)', note: 'Lowest Monthly' },
+  ]
+
+  const emitPlanChange = (plan, freq = frequency, count = (freq === 'weekly' ? weeklyTenure : monthlyTenure)) => {
     setActivePlan(plan)
-    if (m) setTenure(m)
     if (onPlanChange) {
-      onPlanChange({
-        type: plan,
-        months: plan === 'installment' ? m : 1,
-        monthlyAmount: plan === 'installment' ? numPrice / m : numPrice,
-        totalAmount: numPrice,
-        downPayment: plan === 'installment' ? numPrice / m : numPrice,
-      })
+      if (plan === 'complete') {
+        onPlanChange({
+          type: 'complete',
+          frequency: 'complete',
+          periodCount: 1,
+          months: 1,
+          weeks: 1,
+          installmentAmount: numPrice,
+          monthlyAmount: numPrice,
+          weeklyAmount: numPrice,
+          totalAmount: numPrice,
+          downPayment: numPrice,
+        })
+      } else {
+        const amt = count > 0 ? numPrice / count : numPrice
+        onPlanChange({
+          type: 'installment',
+          frequency: freq,
+          periodCount: count,
+          months: freq === 'monthly' ? count : Math.ceil(count / 4),
+          weeks: freq === 'weekly' ? count : count * 4,
+          installmentAmount: amt,
+          monthlyAmount: freq === 'monthly' ? amt : amt * 4,
+          weeklyAmount: freq === 'weekly' ? amt : amt / 4,
+          totalAmount: numPrice,
+          downPayment: amt,
+        })
+      }
     }
   }
 
-  // Generate payment schedule preview
+  const handleSelectPlanType = (plan) => {
+    setActivePlan(plan)
+    emitPlanChange(plan, frequency, frequency === 'weekly' ? weeklyTenure : monthlyTenure)
+  }
+
+  const handleFrequencyChange = (freq) => {
+    setFrequency(freq)
+    const count = freq === 'weekly' ? weeklyTenure : monthlyTenure
+    emitPlanChange('installment', freq, count)
+  }
+
+  const handleTenureChange = (count) => {
+    if (frequency === 'weekly') {
+      setWeeklyTenure(count)
+    } else {
+      setMonthlyTenure(count)
+    }
+    emitPlanChange('installment', frequency, count)
+  }
+
+  // Generate payment schedule preview (weekly or monthly)
   const generateSchedule = () => {
     const schedule = []
     const today = new Date()
-    for (let i = 0; i < tenure; i++) {
+    const count = currentCount
+    const amount = installmentAmount
+
+    for (let i = 0; i < count; i++) {
       const dueDate = new Date(today)
-      dueDate.setMonth(today.getMonth() + i)
+      if (isWeekly) {
+        dueDate.setDate(today.getDate() + (i * 7))
+      } else {
+        dueDate.setMonth(today.getMonth() + i)
+      }
+
       schedule.push({
         installmentNumber: i + 1,
+        periodLabel: isWeekly ? `Week ${i + 1} of ${count}` : `Month ${i + 1} of ${count}`,
         dueDate: i === 0 ? 'Due Today (At Checkout)' : dueDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-        amount: monthlyAmount,
-        status: i === 0 ? 'Initial Deposit' : 'Automated Monthly Billing',
+        amount: amount,
+        status: i === 0 ? 'Initial Deposit' : (isWeekly ? 'Automated Weekly Billing' : 'Automated Monthly Billing'),
       })
     }
     return schedule
@@ -87,7 +150,7 @@ export default function InstallmentPlanView({
               </span>
             </div>
             <p className="text-xs text-veltrix-gray-400 mt-0.5">
-              Pay complete and ship now, or spread across 3 to 12 months from <strong className="text-veltrix-blue font-bold">{formatPrice(minMonthlyAmount)}/mo</strong>
+              Pay complete & ship now, or spread weekly from <strong className="text-veltrix-blue font-bold">{formatPrice(minWeeklyAmount)}/wk</strong> or monthly from <strong className="text-purple-400 font-bold">{formatPrice(minMonthlyAmount)}/mo</strong>
             </p>
           </div>
         </div>
@@ -115,7 +178,7 @@ export default function InstallmentPlanView({
             
             {/* ── Plan A: Pay Complete & Ship Now ── */}
             <div
-              onClick={() => handleSelectPlan('complete')}
+              onClick={() => handleSelectPlanType('complete')}
               className={`p-4 sm:p-5 rounded-2xl border cursor-pointer transition-all relative flex flex-col justify-between ${
                 activePlan === 'complete'
                   ? 'bg-gradient-to-br from-veltrix-blue/15 to-transparent border-veltrix-blue shadow-glow'
@@ -166,7 +229,7 @@ export default function InstallmentPlanView({
               {showSelectButtons && (
                 <button
                   type="button"
-                  onClick={() => handleSelectPlan('complete')}
+                  onClick={() => handleSelectPlanType('complete')}
                   className={`mt-5 w-full py-2.5 rounded-xl text-xs font-bold transition-all ${
                     activePlan === 'complete'
                       ? 'bg-veltrix-blue text-veltrix-black shadow-glow'
@@ -178,9 +241,9 @@ export default function InstallmentPlanView({
               )}
             </div>
 
-            {/* ── Plan B: Pay in Months (Up to a Year) ── */}
+            {/* ── Plan B: Pay in Installments (Weekly or Monthly) ── */}
             <div
-              onClick={() => handleSelectPlan('installment', tenure)}
+              onClick={() => handleSelectPlanType('installment')}
               className={`p-4 sm:p-5 rounded-2xl border cursor-pointer transition-all relative flex flex-col justify-between ${
                 activePlan === 'installment'
                   ? 'bg-gradient-to-br from-purple-500/15 via-veltrix-blue/10 to-transparent border-purple-400 shadow-glow'
@@ -191,7 +254,7 @@ export default function InstallmentPlanView({
                 <div className="flex items-center justify-between mb-3">
                   <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-purple-500/20 text-purple-300 border border-purple-500/30 uppercase tracking-wider flex items-center gap-1">
                     <Sparkles className="w-3 h-3" />
-                    Installments Up to 1 Year
+                    Installments (0% Interest)
                   </span>
                   <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${
                     activePlan === 'installment'
@@ -204,42 +267,86 @@ export default function InstallmentPlanView({
 
                 <h3 className="font-black text-white text-base">Pay in Installments</h3>
                 <p className="text-xs text-veltrix-gray-400 mt-1">
-                  Spread purchase payments comfortably across 3, 6, 9, or 12 months with 0% interest.
+                  Spread purchase payments comfortably in <strong>weekly</strong> or <strong>monthly</strong> installments with 0% interest.
                 </p>
 
-                {/* Tenure Selector Pills */}
-                <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-1.5 p-1 bg-veltrix-black rounded-xl border border-veltrix-gray-800">
-                  {TENURE_OPTIONS.map((opt) => (
-                    <button
-                      key={opt.months}
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleSelectPlan('installment', opt.months)
-                      }}
-                      className={`py-2 px-1 text-center rounded-lg transition-all ${
-                        tenure === opt.months && activePlan === 'installment'
-                          ? 'bg-purple-500 text-white font-bold shadow-md'
-                          : 'text-veltrix-gray-400 hover:text-white hover:bg-veltrix-gray-900 text-xs font-semibold'
-                      }`}
-                    >
-                      <div className="text-[11px] leading-tight">{opt.months} Mo</div>
-                      <div className="text-[9px] opacity-75 font-normal truncate">{opt.note}</div>
-                    </button>
-                  ))}
+                {/* Frequency Switcher: Weekly vs Monthly */}
+                <div className="mt-3.5 flex items-center gap-1 p-1 bg-veltrix-black rounded-xl border border-veltrix-gray-800">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleFrequencyChange('weekly')
+                    }}
+                    className={`flex-1 py-1.5 px-2.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                      isWeekly
+                        ? 'bg-gradient-to-r from-purple-500 to-veltrix-blue text-white shadow-md'
+                        : 'text-veltrix-gray-400 hover:text-white'
+                    }`}
+                  >
+                    <Clock className="w-3.5 h-3.5" />
+                    <span>Weekly Payments</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleFrequencyChange('monthly')
+                    }}
+                    className={`flex-1 py-1.5 px-2.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                      !isWeekly
+                        ? 'bg-gradient-to-r from-purple-500 to-veltrix-blue text-white shadow-md'
+                        : 'text-veltrix-gray-400 hover:text-white'
+                    }`}
+                  >
+                    <Calendar className="w-3.5 h-3.5" />
+                    <span>Monthly Payments</span>
+                  </button>
                 </div>
 
-                {/* Calculated Monthly Breakdown Box */}
+                {/* Tenure Selector Pills (Weekly or Monthly) */}
+                <div className="mt-2.5 grid grid-cols-2 sm:grid-cols-4 gap-1.5 p-1 bg-veltrix-black rounded-xl border border-veltrix-gray-800">
+                  {(isWeekly ? WEEKLY_OPTIONS : MONTHLY_OPTIONS).map((opt) => {
+                    const isSelected = activePlan === 'installment' && currentCount === opt.count
+                    return (
+                      <button
+                        key={opt.count}
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleTenureChange(opt.count)
+                        }}
+                        className={`py-2 px-1 text-center rounded-lg transition-all ${
+                          isSelected
+                            ? 'bg-purple-500 text-white font-bold shadow-md'
+                            : 'text-veltrix-gray-400 hover:text-white hover:bg-veltrix-gray-900 text-xs font-semibold'
+                        }`}
+                      >
+                        <div className="text-[11px] leading-tight">{opt.label}</div>
+                        <div className="text-[9px] opacity-75 font-normal truncate">{opt.note}</div>
+                      </button>
+                    )
+                  })}
+                </div>
+
+                {/* Calculated Installment Breakdown Box */}
                 <div className="mt-3 p-3 bg-veltrix-black rounded-xl border border-veltrix-gray-800/80 flex items-center justify-between">
                   <div>
-                    <span className="text-[10px] text-veltrix-gray-500 uppercase tracking-wider font-semibold">Monthly Payment ({tenure} Mos)</span>
+                    <span className="text-[10px] text-veltrix-gray-500 uppercase tracking-wider font-semibold">
+                      {isWeekly ? `Weekly Payment (${weeklyTenure} Wks)` : `Monthly Payment (${monthlyTenure} Mos)`}
+                    </span>
                     <p className="text-2xl font-black text-purple-300">
-                      {formatPrice(monthlyAmount)}<span className="text-xs text-veltrix-gray-400 font-normal">/mo</span>
+                      {formatPrice(installmentAmount)}
+                      <span className="text-xs text-veltrix-gray-400 font-normal">
+                        {isWeekly ? '/wk' : '/mo'}
+                      </span>
                     </p>
                   </div>
                   <div className="text-right">
-                    <span className="text-[10px] text-veltrix-gray-500 uppercase tracking-wider font-semibold">1st Deposit Today</span>
-                    <p className="text-sm font-bold text-white">{formatPrice(monthlyAmount)}</p>
+                    <span className="text-[10px] text-veltrix-gray-500 uppercase tracking-wider font-semibold">
+                      1st Deposit Today
+                    </span>
+                    <p className="text-sm font-bold text-white">{formatPrice(installmentAmount)}</p>
                   </div>
                 </div>
 
@@ -250,7 +357,9 @@ export default function InstallmentPlanView({
                   </li>
                   <li className="flex items-center gap-2">
                     <Clock className="w-3.5 h-3.5 text-veltrix-blue shrink-0" />
-                    <span>Transparent breakdown: {tenure} equal installments of {formatPrice(monthlyAmount)}</span>
+                    <span>
+                      Transparent breakdown: {currentCount} equal {isWeekly ? 'weekly' : 'monthly'} installments of {formatPrice(installmentAmount)}
+                    </span>
                   </li>
                   <li className="flex items-center gap-2">
                     <ShieldCheck className="w-3.5 h-3.5 text-green-400 shrink-0" />
@@ -262,21 +371,23 @@ export default function InstallmentPlanView({
               {showSelectButtons && (
                 <button
                   type="button"
-                  onClick={() => handleSelectPlan('installment', tenure)}
+                  onClick={() => handleSelectPlanType('installment')}
                   className={`mt-5 w-full py-2.5 rounded-xl text-xs font-bold transition-all ${
                     activePlan === 'installment'
                       ? 'bg-purple-500 text-white shadow-glow'
                       : 'bg-veltrix-gray-800 text-white hover:bg-veltrix-gray-700'
                   }`}
                 >
-                  {activePlan === 'installment' ? `✓ Selected: ${tenure}-Month Plan (${formatPrice(monthlyAmount)}/mo)` : 'Select Installment Plan'}
+                  {activePlan === 'installment'
+                    ? `✓ Selected: ${currentCount}-${isWeekly ? 'Week' : 'Month'} Plan (${formatPrice(installmentAmount)}/${isWeekly ? 'wk' : 'mo'})`
+                    : `Select ${isWeekly ? 'Weekly' : 'Monthly'} Installment Plan`}
                 </button>
               )}
             </div>
 
           </div>
 
-          {/* ── Collapsible Full Monthly Payment Schedule ── */}
+          {/* ── Collapsible Full Payment Schedule ── */}
           <div className="pt-2">
             <button
               type="button"
@@ -285,7 +396,7 @@ export default function InstallmentPlanView({
             >
               <span className="flex items-center gap-2">
                 <Calendar className="w-4 h-4 text-veltrix-blue" />
-                View Full {tenure}-Month Payment Schedule Breakdown ({formatPrice(monthlyAmount)}/month)
+                View Full {currentCount}-{isWeekly ? 'Week' : 'Month'} Payment Schedule Breakdown ({formatPrice(installmentAmount)}/{isWeekly ? 'week' : 'month'})
               </span>
               <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${showSchedule ? 'rotate-180 text-veltrix-blue' : ''}`} />
             </button>
@@ -300,7 +411,7 @@ export default function InstallmentPlanView({
                 </div>
                 {generateSchedule().map((row) => (
                   <div key={row.installmentNumber} className="grid grid-cols-4 text-xs py-1.5 border-b border-veltrix-gray-900 last:border-0 items-center">
-                    <span className="font-semibold text-white">Month {row.installmentNumber} of {tenure}</span>
+                    <span className="font-semibold text-white">{row.periodLabel}</span>
                     <span className="text-veltrix-gray-400 font-mono text-[11px]">{row.dueDate}</span>
                     <span className="text-right font-bold text-white font-mono">{formatPrice(row.amount)}</span>
                     <span className="text-right text-[10px]">
@@ -320,7 +431,7 @@ export default function InstallmentPlanView({
           <div className="p-3 bg-veltrix-black rounded-xl border border-veltrix-gray-800 flex items-start gap-2.5 text-[11px] text-veltrix-gray-400">
             <Info className="w-4 h-4 text-veltrix-blue shrink-0 mt-0.5" />
             <p className="leading-relaxed">
-              <strong>Order Fulfillment Notice:</strong> Selecting <em>Pay Complete & Ship Now</em> qualifies for immediate 24–48h express courier tracking from our central warehouse (2349 Brentwood Drive, Austin, TX 78749). Installment plans allow convenient month-by-month budgeting up to a year.
+              <strong>Order Fulfillment Notice:</strong> Selecting <em>Pay Complete & Ship Now</em> qualifies for immediate 24–48h express courier tracking from our central warehouse (2349 Brentwood Drive, Austin, TX 78749). Installment plans allow convenient weekly or month-by-month budgeting up to a year.
             </p>
           </div>
 

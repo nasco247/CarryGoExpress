@@ -81,7 +81,7 @@ export default function AdminEmails() {
                    .replace(/\[Order_ID\]/g, 'CG-' + Math.floor(100000 + Math.random() * 900000))
                    .replace(/\[Order_Total\]/g, '$1,299.00')
                    .replace(/\[Order_Items\]/g, '1x Apple iPhone 16 Pro Max 256GB')
-                   .replace(/\[Delivery_Address\]/g, '14 Victoria Island, Lagos'))
+                   .replace(/\[Delivery_Address\]/g, '742 Evergreen Terrace, Austin, TX 78749'))
     setCtaText(tpl.ctaText || 'View Details')
     setCtaUrl(tpl.ctaUrl || 'https://www.carrygoexpress.store/')
     showToast(`Loaded "${tpl.name}" template`)

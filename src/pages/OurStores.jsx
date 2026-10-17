@@ -11,17 +11,17 @@ const stores = [
   },
   {
     id: 2,
-    name: 'CarryGoExpress Ikeja Center',
-    address: '45 Computer Village Way, Ikeja, Lagos',
-    email: 'ikeja@carrygoexpress.com',
-    hours: 'Mon-Sat: 8:00 AM - 7:00 PM\nSun: Closed',
+    name: 'CarryGoExpress Los Angeles Hub',
+    address: '8500 Beverly Blvd, Los Angeles, CA 90048',
+    email: 'la@carrygoexpress.store',
+    hours: 'Mon-Sat: 8:00 AM - 7:00 PM\nSun: 10:00 AM - 6:00 PM',
     image: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=600'
   },
   {
     id: 3,
-    name: 'CarryGoExpress Abuja Experience Hub',
-    address: 'Plot 789 Aminu Kano Crescent, Wuse II, Abuja',
-    email: 'abuja@carrygoexpress.com',
+    name: 'CarryGoExpress New York Experience Center',
+    address: '540 Broadway, New York, NY 10012',
+    email: 'ny@carrygoexpress.store',
     hours: 'Mon-Sat: 9:00 AM - 8:00 PM\nSun: 11:00 AM - 5:00 PM',
     image: 'https://images.unsplash.com/photo-1519567281799-9712e52e4b47?w=600'
   }

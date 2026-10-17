@@ -15,6 +15,14 @@ import InstallmentPlanView from '../components/InstallmentPlanView'
 const PAYSTACK_PUBLIC_KEY = import.meta.env.VITE_PAYSTACK_PUBLIC_KEY || 'pk_test_xxxxxx'
 const DELIVERY_FEE = 0 // free express delivery
 
+function TelegramIcon({ className = "w-4 h-4" }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 0 0-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.75-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z" />
+    </svg>
+  )
+}
+
 export default function Checkout() {
   const navigate = useNavigate()
   const { user, profile } = useAuthStore()
@@ -26,11 +34,16 @@ export default function Checkout() {
   const [orderSuccess, setOrderSuccess] = useState(null)
   const [formError, setFormError] = useState(null)
 
-  // Payment plan selection: Pay Complete & Ship Now vs Installment Plan (3-12 months)
+  // Payment plan selection: Pay Complete & Ship Now vs Installment Plan (Weekly / Monthly)
   const [settlementPlan, setSettlementPlan] = useState({
     type: 'complete',
+    frequency: 'weekly', // 'weekly' | 'monthly' | 'complete'
+    periodCount: 1,
     months: 1,
+    weeks: 1,
+    installmentAmount: getTotalPrice(),
     monthlyAmount: getTotalPrice(),
+    weeklyAmount: getTotalPrice(),
     totalAmount: getTotalPrice(),
     downPayment: getTotalPrice()
   })
@@ -81,12 +94,16 @@ export default function Checkout() {
   // Keep settlement plan amounts synced with cart total
   useEffect(() => {
     setSettlementPlan(prev => {
-      const m = prev.months || 1
+      const isInstallment = prev.type === 'installment'
+      const count = prev.periodCount || (prev.frequency === 'weekly' ? (prev.weeks || 4) : (prev.months || 12))
+      const installmentAmount = isInstallment && count > 0 ? totalAmount / count : totalAmount
       return {
         ...prev,
         totalAmount,
-        monthlyAmount: prev.type === 'installment' && m > 0 ? totalAmount / m : totalAmount,
-        downPayment: prev.type === 'installment' && m > 0 ? totalAmount / m : totalAmount,
+        installmentAmount,
+        monthlyAmount: prev.frequency === 'weekly' ? installmentAmount * 4 : installmentAmount,
+        weeklyAmount: prev.frequency === 'weekly' ? installmentAmount : installmentAmount / 4,
+        downPayment: isInstallment ? installmentAmount : totalAmount,
       }
     })
   }, [totalAmount])
@@ -174,11 +191,13 @@ export default function Checkout() {
           gift_card_pin: giftCardPin.trim() || null,
           gift_card_receipt: giftCardReceipt || null,
           payment_plan: settlementPlan.type === 'installment'
-            ? `${settlementPlan.months}-Month Installment Plan (${formatPrice(settlementPlan.monthlyAmount)}/mo)`
+            ? `${settlementPlan.periodCount || (settlementPlan.frequency === 'weekly' ? settlementPlan.weeks : settlementPlan.months)}-${settlementPlan.frequency === 'weekly' ? 'Week' : 'Month'} Installment Plan (${formatPrice(settlementPlan.installmentAmount || settlementPlan.monthlyAmount)}/${settlementPlan.frequency === 'weekly' ? 'wk' : 'mo'})`
             : 'Pay Complete & Ship Now',
           settlement_type: settlementPlan.type,
-          installment_months: settlementPlan.type === 'installment' ? settlementPlan.months : 1,
-          installment_monthly_due: settlementPlan.type === 'installment' ? settlementPlan.monthlyAmount : totalAmount,
+          installment_frequency: settlementPlan.frequency || 'weekly',
+          installment_period_count: settlementPlan.periodCount || (settlementPlan.frequency === 'weekly' ? settlementPlan.weeks : settlementPlan.months) || 1,
+          installment_months: settlementPlan.type === 'installment' ? (settlementPlan.months || 1) : 1,
+          installment_monthly_due: settlementPlan.type === 'installment' ? (settlementPlan.installmentAmount || settlementPlan.monthlyAmount) : totalAmount,
           down_payment_paid: settlementPlan.type === 'installment' ? settlementPlan.downPayment : totalAmount,
         }
       )
@@ -194,11 +213,11 @@ export default function Checkout() {
         total: totalAmount,
         paymentType: `Gift Card (${giftCardType})`,
         planName: settlementPlan.type === 'installment'
-          ? `${settlementPlan.months}-Month Installments (${formatPrice(settlementPlan.monthlyAmount)}/mo)`
+          ? `${settlementPlan.periodCount || (settlementPlan.frequency === 'weekly' ? settlementPlan.weeks : settlementPlan.months)}-${settlementPlan.frequency === 'weekly' ? 'Week' : 'Month'} Installments (${formatPrice(settlementPlan.installmentAmount || settlementPlan.monthlyAmount)}/${settlementPlan.frequency === 'weekly' ? 'wk' : 'mo'})`
           : 'Pay Complete & Ship Now',
         isInstallment: settlementPlan.type === 'installment',
         message: settlementPlan.type === 'installment'
-          ? `Your order has been reserved under our ${settlementPlan.months}-Month Installment Plan! First installment of ${formatPrice(settlementPlan.downPayment)} logged via Gift Card. Item secured in our Austin, TX fulfillment hub.`
+          ? `Your order has been reserved under our ${settlementPlan.periodCount || (settlementPlan.frequency === 'weekly' ? settlementPlan.weeks : settlementPlan.months)}-${settlementPlan.frequency === 'weekly' ? 'Week' : 'Month'} Installment Plan! First installment of ${formatPrice(settlementPlan.downPayment)} logged via Gift Card. Item secured in our Austin, TX fulfillment hub.`
           : 'Your gift card voucher has been received! Our verification team is confirming your code and your gadget package will be dispatched immediately from our Austin, TX warehouse.'
       })
     } catch (err) {
@@ -231,11 +250,13 @@ export default function Checkout() {
           email: user?.email,
           payment_method: 'Live Agent Assisted Payment',
           payment_plan: settlementPlan.type === 'installment'
-            ? `${settlementPlan.months}-Month Installment Plan (${formatPrice(settlementPlan.monthlyAmount)}/mo)`
+            ? `${settlementPlan.periodCount || (settlementPlan.frequency === 'weekly' ? settlementPlan.weeks : settlementPlan.months)}-${settlementPlan.frequency === 'weekly' ? 'Week' : 'Month'} Installment Plan (${formatPrice(settlementPlan.installmentAmount || settlementPlan.monthlyAmount)}/${settlementPlan.frequency === 'weekly' ? 'wk' : 'mo'})`
             : 'Pay Complete & Ship Now',
           settlement_type: settlementPlan.type,
-          installment_months: settlementPlan.type === 'installment' ? settlementPlan.months : 1,
-          installment_monthly_due: settlementPlan.type === 'installment' ? settlementPlan.monthlyAmount : totalAmount,
+          installment_frequency: settlementPlan.frequency || 'weekly',
+          installment_period_count: settlementPlan.periodCount || (settlementPlan.frequency === 'weekly' ? settlementPlan.weeks : settlementPlan.months) || 1,
+          installment_months: settlementPlan.type === 'installment' ? (settlementPlan.months || 1) : 1,
+          installment_monthly_due: settlementPlan.type === 'installment' ? (settlementPlan.installmentAmount || settlementPlan.monthlyAmount) : totalAmount,
           down_payment_paid: settlementPlan.type === 'installment' ? settlementPlan.downPayment : totalAmount,
         }
       )
@@ -251,12 +272,12 @@ export default function Checkout() {
         total: totalAmount,
         paymentType: 'Agent Assisted Support',
         planName: settlementPlan.type === 'installment'
-          ? `${settlementPlan.months}-Month Installments (${formatPrice(settlementPlan.monthlyAmount)}/mo)`
+          ? `${settlementPlan.periodCount || (settlementPlan.frequency === 'weekly' ? settlementPlan.weeks : settlementPlan.months)}-${settlementPlan.frequency === 'weekly' ? 'Week' : 'Month'} Installments (${formatPrice(settlementPlan.installmentAmount || settlementPlan.monthlyAmount)}/${settlementPlan.frequency === 'weekly' ? 'wk' : 'mo'})`
           : 'Pay Complete & Ship Now',
         isAgent: true,
         isInstallment: settlementPlan.type === 'installment',
         message: settlementPlan.type === 'installment'
-          ? `Your ${settlementPlan.months}-Month Installment Plan has been initialized! Connect with our live agent to finalize your first deposit and schedule.`
+          ? `Your ${settlementPlan.periodCount || (settlementPlan.frequency === 'weekly' ? settlementPlan.weeks : settlementPlan.months)}-${settlementPlan.frequency === 'weekly' ? 'Week' : 'Month'} Installment Plan has been initialized! Connect with our live agent on Telegram or WhatsApp to finalize your first deposit and schedule.`
           : 'Your order has been reserved! Connect directly with our live support agent to finalize your payment and arrange priority dispatch from 2349 Brentwood Drive, Austin, TX.'
       })
     } catch (err) {
@@ -305,11 +326,13 @@ export default function Checkout() {
           name: form.full_name, 
           email: user?.email,
           payment_plan: settlementPlan.type === 'installment'
-            ? `${settlementPlan.months}-Month Installment Plan (${formatPrice(settlementPlan.monthlyAmount)}/mo)`
+            ? `${settlementPlan.periodCount || (settlementPlan.frequency === 'weekly' ? settlementPlan.weeks : settlementPlan.months)}-${settlementPlan.frequency === 'weekly' ? 'Week' : 'Month'} Installment Plan (${formatPrice(settlementPlan.installmentAmount || settlementPlan.monthlyAmount)}/${settlementPlan.frequency === 'weekly' ? 'wk' : 'mo'})`
             : 'Pay Complete & Ship Now',
           settlement_type: settlementPlan.type,
-          installment_months: settlementPlan.type === 'installment' ? settlementPlan.months : 1,
-          installment_monthly_due: settlementPlan.type === 'installment' ? settlementPlan.monthlyAmount : totalAmount,
+          installment_frequency: settlementPlan.frequency || 'weekly',
+          installment_period_count: settlementPlan.periodCount || (settlementPlan.frequency === 'weekly' ? settlementPlan.weeks : settlementPlan.months) || 1,
+          installment_months: settlementPlan.type === 'installment' ? (settlementPlan.months || 1) : 1,
+          installment_monthly_due: settlementPlan.type === 'installment' ? (settlementPlan.installmentAmount || settlementPlan.monthlyAmount) : totalAmount,
           down_payment_paid: settlementPlan.type === 'installment' ? settlementPlan.downPayment : totalAmount,
         }
       )
@@ -323,11 +346,11 @@ export default function Checkout() {
         total: totalAmount,
         paymentType: 'CarryGo Digital Wallet',
         planName: settlementPlan.type === 'installment'
-          ? `${settlementPlan.months}-Month Installments (${formatPrice(settlementPlan.monthlyAmount)}/mo)`
+          ? `${settlementPlan.periodCount || (settlementPlan.frequency === 'weekly' ? settlementPlan.weeks : settlementPlan.months)}-${settlementPlan.frequency === 'weekly' ? 'Week' : 'Month'} Installments (${formatPrice(settlementPlan.installmentAmount || settlementPlan.monthlyAmount)}/${settlementPlan.frequency === 'weekly' ? 'wk' : 'mo'})`
           : 'Pay Complete & Ship Now',
         isInstallment: settlementPlan.type === 'installment',
         message: settlementPlan.type === 'installment'
-          ? `First installment deposit debited from your wallet. Your ${settlementPlan.months}-Month Installment Plan is active!`
+          ? `First installment deposit debited from your wallet. Your ${settlementPlan.periodCount || (settlementPlan.frequency === 'weekly' ? settlementPlan.weeks : settlementPlan.months)}-${settlementPlan.frequency === 'weekly' ? 'Week' : 'Month'} Installment Plan is active!`
           : 'Payment completed successfully from your wallet balance. Dispatched from Austin, TX.'
       })
       
@@ -406,7 +429,7 @@ export default function Checkout() {
                           type="text"
                           value={form.full_name}
                           onChange={e => setForm(f => ({ ...f, full_name: e.target.value }))}
-                          placeholder="Recipient full name"
+                          placeholder="Recipient full name (e.g. John Smith)"
                           className="w-full pl-10 pr-4 py-3 bg-veltrix-black border border-veltrix-gray-700 rounded-xl text-white placeholder-veltrix-gray-600 focus:outline-none focus:border-veltrix-blue text-xs"
                         />
                       </div>
@@ -420,7 +443,7 @@ export default function Checkout() {
                           type="tel"
                           value={form.phone}
                           onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
-                          placeholder="+234 800 000 0000 (For courier delivery update)"
+                          placeholder="+1 (555) 234-5678 (For courier delivery update)"
                           className="w-full pl-10 pr-4 py-3 bg-veltrix-black border border-veltrix-gray-700 rounded-xl text-white placeholder-veltrix-gray-600 focus:outline-none focus:border-veltrix-blue text-xs"
                         />
                       </div>
@@ -432,7 +455,7 @@ export default function Checkout() {
                         type="text"
                         value={form.state}
                         onChange={e => setForm(f => ({ ...f, state: e.target.value }))}
-                        placeholder="e.g. Lagos, Abuja, Rivers"
+                        placeholder="e.g. California, Texas, New York"
                         className="w-full px-4 py-3 bg-veltrix-black border border-veltrix-gray-700 rounded-xl text-white placeholder-veltrix-gray-600 focus:outline-none focus:border-veltrix-blue text-xs"
                       />
                     </div>
@@ -443,7 +466,7 @@ export default function Checkout() {
                         type="text"
                         value={form.city}
                         onChange={e => setForm(f => ({ ...f, city: e.target.value }))}
-                        placeholder="e.g. Ikeja, Lekki, Wuse"
+                        placeholder="e.g. Los Angeles, Austin, Houston"
                         className="w-full px-4 py-3 bg-veltrix-black border border-veltrix-gray-700 rounded-xl text-white placeholder-veltrix-gray-600 focus:outline-none focus:border-veltrix-blue text-xs"
                       />
                     </div>
@@ -455,7 +478,7 @@ export default function Checkout() {
                         <textarea
                           value={form.address}
                           onChange={e => setForm(f => ({ ...f, address: e.target.value }))}
-                          placeholder="Street name, house/apartment number, nearest landmark..."
+                          placeholder="Street address (e.g. 742 Evergreen Terrace, Apt 4B)"
                           rows={2}
                           className="w-full pl-10 pr-4 py-3 bg-veltrix-black border border-veltrix-gray-700 rounded-xl text-white placeholder-veltrix-gray-600 focus:outline-none focus:border-veltrix-blue resize-none text-xs"
                         />
@@ -465,12 +488,13 @@ export default function Checkout() {
                 </div>
               </div>
 
-              {/* ── Order Settlement Plan: Pay Complete & Ship Now vs Installments up to 1 Year ── */}
+              {/* ── Order Settlement Plan: Pay Complete & Ship Now vs Installments (Weekly or Monthly) ── */}
               <InstallmentPlanView
                 price={totalAmount}
                 defaultExpanded={true}
                 selectedPlanType={settlementPlan.type}
-                selectedMonths={settlementPlan.months}
+                selectedMonths={settlementPlan.months || 12}
+                selectedFrequency={settlementPlan.frequency || 'weekly'}
                 onPlanChange={(plan) => setSettlementPlan(plan)}
                 showSelectButtons={true}
               />
@@ -692,24 +716,34 @@ export default function Checkout() {
                       </p>
                     </div>
 
-                    <div className="flex flex-col sm:flex-row gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <a
+                        href="https://t.me/Carrygoexpress"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="py-3.5 px-3 bg-[#229ED9] text-white font-bold rounded-xl text-xs hover:bg-[#1b8bc2] transition-all flex items-center justify-center gap-2 shadow-sm"
+                      >
+                        <TelegramIcon className="w-4 h-4" />
+                        <span>Chat on Telegram</span>
+                      </a>
+
                       <a
                         href={`https://wa.me/?text=Hello%20CarryGoExpress%20Agent!%20I%20am%20ready%20to%20complete%20my%20order%20for%20${encodeURIComponent(items.map(i => i.name).join(', '))}%20totaling%20${encodeURIComponent(formatPrice(totalAmount))}.`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex-1 py-3.5 bg-green-500 text-black font-bold rounded-xl text-xs hover:bg-green-400 transition-all flex items-center justify-center gap-2"
+                        className="py-3.5 px-3 bg-green-500 text-black font-bold rounded-xl text-xs hover:bg-green-400 transition-all flex items-center justify-center gap-2"
                       >
                         <MessageSquare className="w-4 h-4" />
-                        <span>Chat Directly with Live Agent</span>
+                        <span>Chat on WhatsApp</span>
                       </a>
 
                       <button
                         onClick={handleAgentOrder}
                         disabled={isProcessing}
-                        className="flex-1 py-3.5 bg-veltrix-black border border-veltrix-gray-700 text-white font-bold rounded-xl text-xs hover:border-veltrix-blue transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                        className="py-3.5 px-3 bg-veltrix-black border border-veltrix-gray-700 text-white font-bold rounded-xl text-xs hover:border-veltrix-blue transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                       >
                         {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4 text-veltrix-blue" />}
-                        <span>Reserve Order for Agent</span>
+                        <span>Reserve for Agent</span>
                       </button>
                     </div>
                   </div>
@@ -779,14 +813,16 @@ export default function Checkout() {
                       <span>Order Settlement Plan:</span>
                       <span className={`font-bold ${settlementPlan.type === 'installment' ? 'text-purple-300' : 'text-veltrix-blue'}`}>
                         {settlementPlan.type === 'installment' 
-                          ? `${settlementPlan.months}-Month Installment Plan` 
+                          ? `${settlementPlan.periodCount || (settlementPlan.frequency === 'weekly' ? settlementPlan.weeks : settlementPlan.months)}-${settlementPlan.frequency === 'weekly' ? 'Week' : 'Month'} Installment Plan` 
                           : 'Complete & Ship Now'}
                       </span>
                     </div>
                     {settlementPlan.type === 'installment' && (
                       <div className="flex justify-between text-[11px] pt-1 border-t border-veltrix-gray-900 text-purple-200">
-                        <span>Monthly Installment:</span>
-                        <span className="font-mono font-bold">{formatPrice(settlementPlan.monthlyAmount)}/mo</span>
+                        <span>{settlementPlan.frequency === 'weekly' ? 'Weekly Installment:' : 'Monthly Installment:'}</span>
+                        <span className="font-mono font-bold">
+                          {formatPrice(settlementPlan.installmentAmount || (settlementPlan.frequency === 'weekly' ? settlementPlan.weeklyAmount : settlementPlan.monthlyAmount))}/{settlementPlan.frequency === 'weekly' ? 'wk' : 'mo'}
+                        </span>
                       </div>
                     )}
                   </div>

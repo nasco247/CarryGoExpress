@@ -1,10 +1,10 @@
 import { Briefcase, ArrowRight } from 'lucide-react'
 
 const jobs = [
-  { title: 'Store Manager', location: 'Abuja Experience Center', type: 'Full-time', department: 'Retail' },
-  { title: 'Customer Support Specialist', location: 'Lagos (Hybrid)', type: 'Full-time', department: 'Support' },
-  { title: 'Frontend Developer (React)', location: 'Remote', type: 'Full-time', department: 'Engineering' },
-  { title: 'Logistics Coordinator', location: 'Ikeja, Lagos', type: 'Full-time', department: 'Operations' },
+  { title: 'Store Manager', location: 'Austin Experience Center, TX', type: 'Full-time', department: 'Retail' },
+  { title: 'Customer Support Specialist', location: 'Austin, TX (Hybrid)', type: 'Full-time', department: 'Support' },
+  { title: 'Frontend Developer (React)', location: 'Remote (US)', type: 'Full-time', department: 'Engineering' },
+  { title: 'Logistics Coordinator', location: 'Austin, TX Fulfillment Hub', type: 'Full-time', department: 'Operations' },
 ]
 
 export default function Careers() {
@@ -13,7 +13,7 @@ export default function Careers() {
       <div className="py-20 bg-veltrix-black-light border-b border-veltrix-gray-800">
         <div className="max-w-4xl mx-auto px-4 text-center">
           <h1 className="text-4xl lg:text-5xl font-bold text-white mb-6">Join the CarryGoExpress Team</h1>
-          <p className="text-lg">We are always looking for passionate, innovative, and driven individuals to help us build the future of fast retail & electronics delivery in Africa.</p>
+          <p className="text-lg">We are always looking for passionate, innovative, and driven individuals to help us build the future of fast consumer electronics delivery nationwide.</p>
         </div>
       </div>
 

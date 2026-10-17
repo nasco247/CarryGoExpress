@@ -93,7 +93,14 @@ export const signOut = async () => {
 export const getCurrentUser = async () => {
   try {
     // 3.5-second timeout to prevent indefinite hangs
-    const userPromise = supabase.auth.getUser().then(res => res.data?.user || null)
+    const userPromise = supabase.auth.getUser().then(({ data, error }) => {
+      if (error) {
+        console.warn('[Auth] Stale or invalid session detected, resetting local auth state:', error.message)
+        signOut()
+        return null
+      }
+      return data?.user || null
+    })
     const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(null), 3500))
     const user = await Promise.race([userPromise, timeoutPromise])
     return user
@@ -505,10 +512,16 @@ export const recordSiteVisit = async (visitData = {}) => {
         user_id: visitData.user_id || null,
         user_email: visitData.user_email || null,
       })
-      .select()
-      .single()
 
-    return { data, error }
+    if (error) {
+      // If error is due to stale token (401 / JWT), wipe tokens
+      if (error.code === 'PGRST301' || error.message?.includes('JWT') || error.code === '401') {
+        signOut()
+      }
+      return { data: null, error: error.message }
+    }
+
+    return { data, error: null }
   } catch (err) {
     return { data: null, error: err.message }
   }

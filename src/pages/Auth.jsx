@@ -24,41 +24,24 @@ export function Login() {
     setLoading(true)
 
     const trimmedEmail = email.trim().toLowerCase()
-    const isAdminCreds = trimmedEmail === 'admin@carrygoexpress.com' && password === 'REDACTED_ADMIN_PASSWORD'
 
     try {
       const { data, error: sbError } = await signIn(trimmedEmail, password)
 
       if (sbError) {
         console.warn('[Login Notice] Supabase response:', sbError.message)
-        // If Supabase encountered "Database error querying schema" or schema scan failure
-        // and admin credentials are provided, authorize admin seamlessly
-        if (isAdminCreds || (trimmedEmail.includes('admin') && (sbError.message?.includes('schema') || sbError.message?.includes('Database error') || sbError.status === 500))) {
-          console.log('[Login] Admin authorized with master credentials (schema error resolved)')
-          const adminSessionUser = {
-            id: '00000000-0000-0000-0000-000000000001',
-            email: trimmedEmail,
-            role: 'authenticated',
-            aud: 'authenticated',
-            user_metadata: { full_name: 'CarryGo Administrator', role: 'admin' },
-            app_metadata: { role: 'admin', provider: 'email' }
-          }
-          setUser(adminSessionUser)
-          try {
-            localStorage.setItem('carrygo-admin-session', JSON.stringify(adminSessionUser))
-          } catch {}
-          navigate('/admin')
-          setLoading(false)
-          return
+        if (sbError.message?.includes('schema') || sbError.message?.includes('Database error')) {
+          setError('Database schema sync required: please run the supabase_schema.sql script in your Supabase SQL editor to ensure auth tokens are initialized.')
+        } else {
+          setError(sbError.message || 'Invalid email or password. Please try again.')
         }
-
-        setError(sbError.message || 'Invalid email or password. Please try again.')
         setLoading(false)
       } else {
         setUser(data.user)
+        const isAdmin = data.user?.app_metadata?.role === 'admin' || data.user?.user_metadata?.role === 'admin'
         if (redirect) {
           navigate(redirect)
-        } else if (data.user?.user_metadata?.role === 'admin' || trimmedEmail.includes('admin')) {
+        } else if (isAdmin) {
           navigate('/admin')
         } else {
           navigate('/')
@@ -67,23 +50,6 @@ export function Login() {
       }
     } catch (err) {
       console.error('[Login Error]', err)
-      if (isAdminCreds) {
-        const adminSessionUser = {
-          id: '00000000-0000-0000-0000-000000000001',
-          email: trimmedEmail,
-          role: 'authenticated',
-          aud: 'authenticated',
-          user_metadata: { full_name: 'CarryGo Administrator', role: 'admin' },
-          app_metadata: { role: 'admin', provider: 'email' }
-        }
-        setUser(adminSessionUser)
-        try {
-          localStorage.setItem('carrygo-admin-session', JSON.stringify(adminSessionUser))
-        } catch {}
-        navigate('/admin')
-        setLoading(false)
-        return
-      }
       setError(err.message || 'An unexpected error occurred during sign in.')
       setLoading(false)
     }

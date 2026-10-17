@@ -13,8 +13,12 @@ const isValidHttpUrl = (str) => {
   }
 }
 
-const supabaseUrl = isValidHttpUrl(rawUrl) ? rawUrl : 'https://vhvwtogqeajcaudyyvit.supabase.co'
-const supabaseAnonKey = rawKey || 'sb_publishable_1l-0AyjNMiSyJKaeNocKow_ovYmJtCl'
+if (!rawUrl || !rawKey) {
+  console.warn('[CarryGoExpress] Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY. Ensure your .env file is configured.')
+}
+
+const supabaseUrl = isValidHttpUrl(rawUrl) ? rawUrl : 'https://your-project.supabase.co'
+const supabaseAnonKey = rawKey || 'your-supabase-publishable-anon-key'
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {

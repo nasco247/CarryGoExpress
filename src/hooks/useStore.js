@@ -35,22 +35,7 @@ export const useAuthStore = create((set, get) => ({
         }
         set({ user, profile: profile || null, isLoading: false })
       } else {
-        // Check for active admin session
-        let fallbackAdmin = null
-        try {
-          const raw = typeof window !== 'undefined' ? localStorage.getItem('carrygo-admin-session') : null
-          if (raw) fallbackAdmin = JSON.parse(raw)
-        } catch {}
-
-        if (fallbackAdmin) {
-          set({
-            user: fallbackAdmin,
-            profile: { id: fallbackAdmin.id, full_name: 'CarryGo Administrator', email: fallbackAdmin.email, role: 'admin' },
-            isLoading: false
-          })
-        } else {
-          set({ user: null, profile: null, isLoading: false })
-        }
+        set({ user: null, profile: null, isLoading: false })
       }
 
       // Listen for auth changes

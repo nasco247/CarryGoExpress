@@ -759,6 +759,7 @@ export default function AdminEmails() {
               <div className="max-w-xl mx-auto rounded-2xl overflow-hidden shadow-2xl border border-veltrix-gray-800 bg-[#111827]">
                 <iframe
                   title="Live Email Preview"
+                  sandbox="allow-popups"
                   srcDoc={liveHtmlPreview}
                   className="w-full h-[520px] border-0"
                 />

@@ -200,7 +200,7 @@ export default function AdminSettings() {
                     <li>Set <strong>Sender Name</strong>: <code className="text-white bg-black/60 px-1.5 py-0.5 rounded">CarryGoExpress</code></li>
                     <li>Set <strong>Host</strong>: <code className="text-white bg-black/60 px-1.5 py-0.5 rounded">mail.privateemail.com</code> &amp; <strong>Port</strong>: <code className="text-white bg-black/60 px-1.5 py-0.5 rounded">465</code></li>
                     <li>Set <strong>Username</strong>: <code className="text-white bg-black/60 px-1.5 py-0.5 rounded">support@carrygoexpress.store</code></li>
-                    <li>Set <strong>Password</strong>: <code className="text-white bg-black/60 px-1.5 py-0.5 rounded">REDACTED_PASSWORD</code></li>
+                    <li>Set <strong>Password</strong>: <code className="text-white bg-black/60 px-1.5 py-0.5 rounded">&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull; (Your PrivateEmail Mailbox Password)</code></li>
                     <li>Click <strong>Save</strong>. All customer emails will now be sent directly from your Namecheap domain!</li>
                   </ol>
                 </div>

@@ -186,7 +186,7 @@ ALTER TABLE public.carts        ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.app_events   ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.site_visits  ENABLE ROW LEVEL SECURITY;
 
--- Helper function to check if current user is admin (Non-recursive)
+-- Helper function to check if current user is admin (Non-recursive and strict)
 CREATE OR REPLACE FUNCTION public.is_admin()
 RETURNS BOOLEAN 
 SECURITY DEFINER
@@ -194,13 +194,13 @@ SET search_path = public, auth, pg_temp
 LANGUAGE plpgsql
 AS $$
 BEGIN
-  -- 1. Check JWT metadata first (instant, avoids table recursion)
-  IF (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin' THEN
+  -- 1. Check verified app_metadata or user_metadata role
+  IF (auth.jwt() -> 'app_metadata' ->> 'role') = 'admin' OR (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin' THEN
     RETURN TRUE;
   END IF;
 
-  -- 2. Check admin email
-  IF (auth.jwt() ->> 'email') LIKE '%admin%' THEN
+  -- 2. Check exact authorized administrator email (exact match, prevents wildcard escalation)
+  IF (auth.jwt() ->> 'email') = 'admin@carrygoexpress.com' THEN
     RETURN TRUE;
   END IF;
 
@@ -220,23 +220,22 @@ DROP POLICY IF EXISTS "profiles_update_policy" ON public.profiles;
 DROP POLICY IF EXISTS "profiles_delete_policy" ON public.profiles;
 DROP POLICY IF EXISTS "profiles_policy" ON public.profiles;
 
--- Allow reading profiles (for store usernames, avatars, customer orders)
+-- Users can read their own profile; admins can read all customer profiles
 CREATE POLICY "profiles_select_policy" ON public.profiles
-  FOR SELECT USING (true);
+  FOR SELECT USING (auth.uid() = id OR public.is_admin());
 
--- Allow creating profiles (via signup trigger, admin, or user)
+-- Allow creating profiles (via signup trigger or authenticated registration)
 CREATE POLICY "profiles_insert_policy" ON public.profiles
-  FOR INSERT WITH CHECK (true);
+  FOR INSERT WITH CHECK (auth.uid() = id OR public.is_admin());
 
--- Users can update their own profile; admins can update any profile
+-- Users can update their own profile; admins can update any profile (prevents self-elevation)
 CREATE POLICY "profiles_update_policy" ON public.profiles
-  FOR UPDATE USING (
-    auth.uid() = id 
-    OR (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin'
-    OR (auth.jwt() ->> 'email') LIKE '%admin%'
+  FOR UPDATE USING (auth.uid() = id OR public.is_admin())
+  WITH CHECK (
+    public.is_admin() OR (role IS NOT DISTINCT FROM (SELECT p.role FROM public.profiles p WHERE p.id = auth.uid()))
   );
 
--- ── Products policies (Public can view, Authenticated/Admin can manage) ──
+-- ── Products policies (Public can view, ONLY Admin can manage) ──
 DROP POLICY IF EXISTS "products_read_policy" ON public.products;
 DROP POLICY IF EXISTS "products_manage_policy" ON public.products;
 
@@ -244,32 +243,61 @@ CREATE POLICY "products_read_policy" ON public.products
   FOR SELECT USING (true);
 
 CREATE POLICY "products_manage_policy" ON public.products
-  FOR ALL USING (auth.role() = 'authenticated' OR public.is_admin())
-  WITH CHECK (auth.role() = 'authenticated' OR public.is_admin());
+  FOR ALL USING (public.is_admin())
+  WITH CHECK (public.is_admin());
 
--- ── Orders policies (User sees own, Admin sees all) ────────────
+-- ── Orders policies (User sees own, Admin sees all, Admin manages) ────────────
 DROP POLICY IF EXISTS "orders_read_policy" ON public.orders;
 DROP POLICY IF EXISTS "orders_manage_policy" ON public.orders;
+DROP POLICY IF EXISTS "orders_select_policy" ON public.orders;
+DROP POLICY IF EXISTS "orders_insert_policy" ON public.orders;
+DROP POLICY IF EXISTS "orders_update_policy" ON public.orders;
 
-CREATE POLICY "orders_read_policy" ON public.orders
-  FOR SELECT USING (auth.uid() = user_id OR public.is_admin() OR auth.role() = 'authenticated');
+CREATE POLICY "orders_select_policy" ON public.orders
+  FOR SELECT USING (auth.uid() = user_id OR public.is_admin());
 
-CREATE POLICY "orders_manage_policy" ON public.orders
-  FOR ALL USING (auth.uid() = user_id OR public.is_admin() OR auth.role() = 'authenticated')
-  WITH CHECK (auth.uid() = user_id OR public.is_admin() OR auth.role() = 'authenticated');
+CREATE POLICY "orders_insert_policy" ON public.orders
+  FOR INSERT WITH CHECK (auth.uid() = user_id OR public.is_admin());
 
--- ── Order items policies ───────────────────────────────────────
+CREATE POLICY "orders_update_policy" ON public.orders
+  FOR UPDATE USING (public.is_admin())
+  WITH CHECK (public.is_admin());
+
+-- ── Order items policies (Strict parent order ownership) ───────
 DROP POLICY IF EXISTS "order_items_policy" ON public.order_items;
+DROP POLICY IF EXISTS "order_items_select_policy" ON public.order_items;
+DROP POLICY IF EXISTS "order_items_insert_policy" ON public.order_items;
+DROP POLICY IF EXISTS "order_items_manage_policy" ON public.order_items;
 
-CREATE POLICY "order_items_policy" ON public.order_items
-  FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "order_items_select_policy" ON public.order_items
+  FOR SELECT USING (
+    EXISTS (SELECT 1 FROM public.orders o WHERE o.id = order_items.order_id AND (o.user_id = auth.uid() OR public.is_admin()))
+  );
 
--- ── Transactions policies ──────────────────────────────────────
+CREATE POLICY "order_items_insert_policy" ON public.order_items
+  FOR INSERT WITH CHECK (
+    EXISTS (SELECT 1 FROM public.orders o WHERE o.id = order_items.order_id AND (o.user_id = auth.uid() OR public.is_admin()))
+  );
+
+CREATE POLICY "order_items_manage_policy" ON public.order_items
+  FOR UPDATE USING (public.is_admin())
+  WITH CHECK (public.is_admin());
+
+-- ── Transactions policies (User sees own, Admin manages) ───────
 DROP POLICY IF EXISTS "transactions_policy" ON public.transactions;
+DROP POLICY IF EXISTS "transactions_select_policy" ON public.transactions;
+DROP POLICY IF EXISTS "transactions_insert_policy" ON public.transactions;
+DROP POLICY IF EXISTS "transactions_manage_policy" ON public.transactions;
 
-CREATE POLICY "transactions_policy" ON public.transactions
-  FOR ALL USING (auth.uid() = user_id OR public.is_admin() OR auth.role() = 'authenticated')
-  WITH CHECK (auth.uid() = user_id OR public.is_admin() OR auth.role() = 'authenticated');
+CREATE POLICY "transactions_select_policy" ON public.transactions
+  FOR SELECT USING (auth.uid() = user_id OR public.is_admin());
+
+CREATE POLICY "transactions_insert_policy" ON public.transactions
+  FOR INSERT WITH CHECK (auth.uid() = user_id OR public.is_admin());
+
+CREATE POLICY "transactions_manage_policy" ON public.transactions
+  FOR UPDATE USING (public.is_admin())
+  WITH CHECK (public.is_admin());
 
 -- ── Carts policies ─────────────────────────────────────────────
 DROP POLICY IF EXISTS "carts_policy" ON public.carts;
@@ -281,9 +309,9 @@ CREATE POLICY "carts_policy" ON public.carts
 DROP POLICY IF EXISTS "app_events_policy" ON public.app_events;
 
 CREATE POLICY "app_events_policy" ON public.app_events
-  FOR ALL USING (true) WITH CHECK (true);
+  FOR ALL USING (public.is_admin()) WITH CHECK (true);
 
--- ── Site Visits policies (Anyone can insert visit, Admin can view) ──
+-- ── Site Visits policies (Anyone can insert visit, ONLY Admin can view) ──
 DROP POLICY IF EXISTS "site_visits_insert" ON public.site_visits;
 DROP POLICY IF EXISTS "site_visits_select" ON public.site_visits;
 
@@ -291,7 +319,7 @@ CREATE POLICY "site_visits_insert" ON public.site_visits
   FOR INSERT WITH CHECK (true);
 
 CREATE POLICY "site_visits_select" ON public.site_visits
-  FOR SELECT USING (public.is_admin() OR auth.role() = 'authenticated');
+  FOR SELECT USING (public.is_admin());
 
 -- ============================================================
 -- Enable Supabase Realtime for instant live tracking
@@ -390,9 +418,9 @@ WHERE NOT EXISTS (SELECT 1 FROM public.products LIMIT 1);
 -- Run this block in Supabase SQL Editor to provision your Admin
 -- and repair any NULL token scan errors in auth.users.
 --
--- Default Admin Credentials:
+-- Admin Credentials Setup:
 -- Email:    admin@carrygoexpress.com
--- Password: REDACTED_ADMIN_PASSWORD
+-- Password: Set your own strong password in v_admin_pass below before executing.
 -- ============================================================
 
 -- Repair any existing rows in auth.users that have NULL token strings
@@ -419,8 +447,13 @@ DO $$
 DECLARE
   v_admin_id UUID := gen_random_uuid();
   v_admin_email TEXT := 'admin@carrygoexpress.com';
-  v_admin_pass TEXT := 'REDACTED_ADMIN_PASSWORD';
+  -- IMPORTANT: Replace with your strong secret password before running in Supabase SQL editor:
+  v_admin_pass TEXT := 'REPLACE_WITH_YOUR_STRONG_PASSWORD';
 BEGIN
+  IF v_admin_pass = 'REPLACE_WITH_YOUR_STRONG_PASSWORD' THEN
+    RAISE NOTICE 'Please set v_admin_pass to your desired administrator password before running this provisioning script.';
+    RETURN;
+  END IF;
   -- 1. Create or update in auth.users
   IF NOT EXISTS (SELECT 1 FROM auth.users WHERE email = v_admin_email) THEN
     INSERT INTO auth.users (

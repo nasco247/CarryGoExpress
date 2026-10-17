@@ -70,9 +70,9 @@ function ProtectedRoute({ children, requireAdmin = false }) {
     return <Navigate to={requireAdmin ? "/login?redirect=/admin" : "/login"} replace />
   }
 
-  const isAdmin = user.user_metadata?.role === 'admin' || user.email?.includes('admin') || profile?.role === 'admin'
+  const isAdmin = profile?.role === 'admin' || user.app_metadata?.role === 'admin' || user.user_metadata?.role === 'admin'
   if (requireAdmin && !isAdmin) {
-    console.log('[ProtectedRoute] User lacks admin role, redirecting to home')
+    console.log('[ProtectedRoute] Access denied: User lacks verified admin role, redirecting to home')
     return <Navigate to="/" replace />
   }
 

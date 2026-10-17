@@ -1,6 +1,9 @@
 import { useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { Eye, EyeOff, Mail, Lock, User, ArrowRight, Shield, CheckCircle } from 'lucide-react'
+import { 
+  Eye, EyeOff, Mail, Lock, User, ArrowRight, Shield, 
+  CheckCircle, AlertCircle, Sparkles, Loader2, ArrowLeft, Check
+} from 'lucide-react'
 import { signIn, signUp } from '../lib/supabase'
 import { useAuthStore } from '../hooks/useStore'
 
@@ -20,149 +23,186 @@ export function Login() {
     setError('')
     setLoading(true)
 
-    const { data, error: sbError } = await signIn(email, password)
+    try {
+      const { data, error: sbError } = await signIn(email.trim(), password)
 
-    if (sbError) {
-      setError(sbError.message)
-      setLoading(false)
-    } else {
-      setUser(data.user)
-      if (redirect) {
-        navigate(redirect)
-      } else if (data.user?.user_metadata?.role === 'admin' || email.includes('admin')) {
-        navigate('/admin')
+      if (sbError) {
+        setError(sbError.message || 'Invalid email or password. Please try again.')
+        setLoading(false)
       } else {
-        navigate('/')
+        setUser(data.user)
+        if (redirect) {
+          navigate(redirect)
+        } else if (data.user?.user_metadata?.role === 'admin' || email.toLowerCase().includes('admin')) {
+          navigate('/admin')
+        } else {
+          navigate('/')
+        }
+        setLoading(false)
       }
+    } catch (err) {
+      console.error('[Login Error]', err)
+      setError(err.message || 'An unexpected error occurred during sign in.')
       setLoading(false)
     }
-  }
-
-  // Quick Demo Admin Login Helper for smooth evaluation of /admin route
-  const handleDemoAdminLogin = () => {
-    const demoAdminUser = {
-      id: 'admin-demo-user-1',
-      email: 'admin@carrygoexpress.com',
-      user_metadata: {
-        role: 'admin',
-        full_name: 'CarryGo Super Admin'
-      }
-    }
-    setUser(demoAdminUser)
-    navigate(redirect || '/admin')
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 pt-20">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-gradient-to-br from-veltrix-blue to-veltrix-blue-dark rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-glow">
-            <span className="text-veltrix-black font-extrabold text-3xl tracking-tighter">CG</span>
-          </div>
-          <h1 className="text-2xl font-bold text-white">Welcome to CarryGoExpress</h1>
-          <p className="text-veltrix-gray-400 mt-2 text-sm">
-            {redirect === '/admin' ? 'Sign in with an Administrator account to access /admin' : 'Sign in to access your orders and wallet'}
-          </p>
-        </div>
+    <div className="relative min-h-[100dvh] flex flex-col items-center justify-center px-4 sm:px-6 pt-28 sm:pt-32 pb-16 sm:pb-20 bg-veltrix-black overflow-hidden">
+      {/* Ambient background glows */}
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-veltrix-blue/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-10 right-10 w-80 h-80 bg-purple-500/5 rounded-full blur-3xl pointer-events-none" />
 
-        {/* Demo Admin Quick Access Banner */}
-        <div className="mb-6 p-4 bg-purple-500/10 border border-purple-500/30 rounded-2xl">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-bold text-purple-300 flex items-center gap-1.5">
-              <Shield className="w-4 h-4 text-purple-400" />
-              Admin Portal Quick Access
-            </span>
-            <span className="text-[10px] bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded-full font-mono">
-              /admin
-            </span>
-          </div>
-          <p className="text-xs text-veltrix-gray-400 mb-3">
-            Click below for instant one-click access to the CarryGoExpress Realtime Admin Console.
-          </p>
-          <button
-            type="button"
-            onClick={handleDemoAdminLogin}
-            className="w-full py-2.5 px-4 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 shadow-lg transition-all"
+      <div className="relative w-full max-w-md mx-auto z-10">
+        
+        {/* Navigation Breadcrumb */}
+        <div className="mb-6 flex items-center justify-between">
+          <Link 
+            to="/" 
+            className="inline-flex items-center gap-2 text-xs font-semibold text-veltrix-gray-400 hover:text-veltrix-blue transition-colors group"
           >
-            <Shield className="w-3.5 h-3.5" />
-            Enter Admin Console Directly
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {error && (
-            <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-xs">
-              {error}
-            </div>
-          )}
-
-          <div>
-            <label className="block text-xs font-semibold text-veltrix-gray-300 mb-1.5">Email Address</label>
-            <div className="relative">
-              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-veltrix-gray-500" />
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@carrygoexpress.com"
-                className="input-field pl-11 text-sm"
-                required
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-veltrix-gray-300 mb-1.5">Password</label>
-            <div className="relative">
-              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-veltrix-gray-500" />
-              <input
-                type={showPassword ? 'text' : 'password'}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="input-field pl-11 pr-11 text-sm"
-                required
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-veltrix-gray-500 hover:text-white"
-              >
-                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between text-xs">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" className="w-4 h-4 rounded border-veltrix-gray-700 bg-veltrix-black-light text-veltrix-blue focus:ring-veltrix-blue" />
-              <span className="text-veltrix-gray-400">Remember me</span>
-            </label>
-            <span className="text-veltrix-gray-500">Secure Supabase Auth</span>
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full btn-primary py-3.5 flex items-center justify-center gap-2 disabled:opacity-50 text-sm font-bold"
-          >
-            {loading ? (
-              <div className="w-5 h-5 border-2 border-veltrix-black border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <>
-                Sign In
-                <ArrowRight className="w-4 h-4" />
-              </>
-            )}
-          </button>
-        </form>
-
-        <p className="text-center mt-6 text-xs text-veltrix-gray-400">
-          Don't have an account?{' '}
-          <Link to="/register" className="text-veltrix-blue hover:underline font-bold">
-            Create Customer Account
+            <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-1 transition-transform" />
+            <span>Back to Store</span>
           </Link>
-        </p>
+          <span className="text-[11px] font-mono text-veltrix-gray-500 flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+            Live Store Secure
+          </span>
+        </div>
+
+        {/* Card Header & Brand */}
+        <div className="text-center mb-6">
+          <Link to="/" className="inline-block group mb-3">
+            <div className="w-14 h-14 bg-gradient-to-br from-veltrix-blue to-veltrix-blue-dark rounded-2xl flex items-center justify-center mx-auto shadow-glow group-hover:scale-105 transition-transform">
+              <span className="text-veltrix-black font-black text-2xl tracking-tighter">CG</span>
+            </div>
+          </Link>
+          <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+            Welcome Back
+          </h1>
+          <p className="text-veltrix-gray-400 mt-1.5 text-xs sm:text-sm">
+            {redirect === '/admin' 
+              ? 'Sign in with administrator credentials' 
+              : 'Sign in to your CarryGoExpress account'}
+          </p>
+        </div>
+
+        {/* Auth Mode Toggle Pill */}
+        <div className="grid grid-cols-2 p-1 bg-veltrix-black-light/80 border border-veltrix-gray-800 rounded-xl mb-4">
+          <div className="py-2 text-center text-xs font-bold text-veltrix-black bg-veltrix-blue rounded-lg shadow-sm">
+            Sign In
+          </div>
+          <Link 
+            to="/register" 
+            className="py-2 text-center text-xs font-semibold text-veltrix-gray-400 hover:text-white transition-colors"
+          >
+            Create Account
+          </Link>
+        </div>
+
+        {/* Form Container */}
+        <div className="bg-veltrix-black-light/95 backdrop-blur-xl border border-veltrix-gray-800 rounded-2xl p-6 sm:p-8 shadow-2xl">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {error && (
+              <div className="p-3.5 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-xs flex items-start gap-2.5 animate-fade-in">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span className="leading-relaxed">{error}</span>
+              </div>
+            )}
+
+            <div className="space-y-1.5">
+              <label className="block text-xs font-semibold text-veltrix-gray-300">
+                Email Address
+              </label>
+              <div className="relative">
+                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-veltrix-gray-500" />
+                <input
+                  type="email"
+                  required
+                  autoComplete="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="name@example.com"
+                  className="w-full h-12 pl-10 pr-4 bg-veltrix-black border border-veltrix-gray-700 rounded-xl text-white placeholder-veltrix-gray-600 focus:outline-none focus:border-veltrix-blue focus:ring-2 focus:ring-veltrix-blue/20 text-base sm:text-sm transition-all"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-semibold text-veltrix-gray-300">
+                  Password
+                </label>
+              </div>
+              <div className="relative">
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-veltrix-gray-500" />
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full h-12 pl-10 pr-11 bg-veltrix-black border border-veltrix-gray-700 rounded-xl text-white placeholder-veltrix-gray-600 focus:outline-none focus:border-veltrix-blue focus:ring-2 focus:ring-veltrix-blue/20 text-base sm:text-sm transition-all"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 text-veltrix-gray-500 hover:text-white transition-colors rounded-lg focus:outline-none"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between text-xs pt-1">
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input 
+                  type="checkbox" 
+                  defaultChecked 
+                  className="w-4 h-4 rounded border-veltrix-gray-700 bg-veltrix-black text-veltrix-blue focus:ring-veltrix-blue cursor-pointer" 
+                />
+                <span className="text-veltrix-gray-400">Remember me</span>
+              </label>
+              <span className="text-[11px] text-veltrix-gray-500 font-mono">256-bit SSL</span>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full h-12 mt-2 bg-veltrix-blue text-veltrix-black font-extrabold rounded-xl text-sm shadow-glow hover:shadow-glow-lg active:scale-[0.99] transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Signing In...</span>
+                </>
+              ) : (
+                <>
+                  <span>Sign In</span>
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
+            </button>
+          </form>
+
+          <div className="mt-6 pt-5 border-t border-veltrix-gray-800 text-center">
+            <p className="text-xs text-veltrix-gray-400">
+              Don't have an account?{' '}
+              <Link to="/register" className="text-veltrix-blue hover:underline font-bold transition-colors">
+                Create an account
+              </Link>
+            </p>
+          </div>
+        </div>
+
+        {/* Security Trust Badge */}
+        <div className="mt-6 text-center text-[11px] text-veltrix-gray-500 flex items-center justify-center gap-1.5">
+          <Shield className="w-3.5 h-3.5 text-green-400" />
+          <span>Encrypted Session • Supabase Authentication</span>
+        </div>
+
       </div>
     </div>
   )
@@ -176,159 +216,299 @@ export function Register() {
     confirmPassword: ''
   })
   const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
+  const [registeredEmail, setRegisteredEmail] = useState('')
   const navigate = useNavigate()
+  const { setUser } = useAuthStore()
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
 
-    if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match')
+    const name = formData.fullName.trim()
+    const email = formData.email.trim()
+
+    if (!name || name.length < 2) {
+      setError('Please provide your full name (at least 2 characters).')
+      return
+    }
+
+    if (!email || !email.includes('@') || !email.includes('.')) {
+      setError('Please enter a valid email address.')
       return
     }
 
     if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters')
+      setError('Password must contain at least 6 characters.')
+      return
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match. Please ensure both passwords match.')
       return
     }
 
     setLoading(true)
 
-    const { data, error: sbError } = await signUp(formData.email, formData.password, {
-      full_name: formData.fullName,
-      role: 'customer'
-    })
+    try {
+      const { data, error: sbError } = await signUp(email, formData.password, {
+        full_name: name,
+        role: 'customer'
+      })
 
-    if (sbError) {
-      setError(sbError.message)
+      if (sbError) {
+        setError(sbError.message || 'Failed to create account. Please try again.')
+        setLoading(false)
+        return
+      }
+
+      setRegisteredEmail(email)
+
+      // If Supabase immediately returns a session, log user in directly
+      if (data?.session && data?.user) {
+        setUser(data.user)
+        setSuccess(true)
+        setTimeout(() => navigate('/'), 2200)
+      } else {
+        // Confirmation email state or user created
+        setSuccess(true)
+        setLoading(false)
+      }
+    } catch (err) {
+      console.error('[Sign Up Error]', err)
+      setError(err.message || 'An error occurred during account registration.')
       setLoading(false)
-    } else {
-      setSuccess(true)
-      setLoading(false)
-      setTimeout(() => navigate('/login'), 2500)
     }
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 pt-20">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-gradient-to-br from-veltrix-blue to-veltrix-blue-dark rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-glow">
-            <span className="text-veltrix-black font-extrabold text-3xl tracking-tighter">CG</span>
-          </div>
-          <h1 className="text-2xl font-bold text-white">Join CarryGoExpress</h1>
-          <p className="text-veltrix-gray-400 mt-2 text-sm">Create an account for expedited checkout & order tracking</p>
+    <div className="relative min-h-[100dvh] flex flex-col items-center justify-center px-4 sm:px-6 pt-28 sm:pt-32 pb-16 sm:pb-20 bg-veltrix-black overflow-hidden">
+      {/* Ambient background glows */}
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-veltrix-blue/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-10 left-10 w-80 h-80 bg-cyan-500/5 rounded-full blur-3xl pointer-events-none" />
+
+      <div className="relative w-full max-w-md mx-auto z-10">
+        
+        {/* Navigation Breadcrumb */}
+        <div className="mb-6 flex items-center justify-between">
+          <Link 
+            to="/" 
+            className="inline-flex items-center gap-2 text-xs font-semibold text-veltrix-gray-400 hover:text-veltrix-blue transition-colors group"
+          >
+            <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-1 transition-transform" />
+            <span>Back to Store</span>
+          </Link>
+          <span className="text-[11px] font-mono text-veltrix-gray-500 flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+            Instant Activation
+          </span>
         </div>
 
-        {success ? (
-          <div className="p-8 bg-veltrix-black-light border border-green-500/30 rounded-2xl text-center space-y-4 animate-fade-in">
-            <CheckCircle className="w-12 h-12 text-green-400 mx-auto" />
-            <h2 className="text-xl font-bold text-white">Registration Successful!</h2>
-            <p className="text-xs text-veltrix-gray-400">
-              Your customer profile is active. Redirecting you to sign in...
-            </p>
-          </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {error && (
-              <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-xs">
-                {error}
-              </div>
-            )}
-
-            <div>
-              <label className="block text-xs font-semibold text-veltrix-gray-300 mb-1.5">Full Name</label>
-              <div className="relative">
-                <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-veltrix-gray-500" />
-                <input
-                  type="text"
-                  required
-                  value={formData.fullName}
-                  onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                  placeholder="John Doe"
-                  className="input-field pl-11 text-sm"
-                />
-              </div>
+        {/* Header Branding */}
+        <div className="text-center mb-6">
+          <Link to="/" className="inline-block group mb-3">
+            <div className="w-14 h-14 bg-gradient-to-br from-veltrix-blue to-veltrix-blue-dark rounded-2xl flex items-center justify-center mx-auto shadow-glow group-hover:scale-105 transition-transform">
+              <span className="text-veltrix-black font-black text-2xl tracking-tighter">CG</span>
             </div>
+          </Link>
+          <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+            Create an Account
+          </h1>
+          <p className="text-veltrix-gray-400 mt-1.5 text-xs sm:text-sm">
+            Join CarryGoExpress for fast checkout and gadget tracking
+          </p>
+        </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-veltrix-gray-300 mb-1.5">Email Address</label>
-              <div className="relative">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-veltrix-gray-500" />
-                <input
-                  type="email"
-                  required
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  placeholder="you@example.com"
-                  className="input-field pl-11 text-sm"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-veltrix-gray-300 mb-1.5">Password</label>
-              <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-veltrix-gray-500" />
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  required
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  placeholder="••••••••"
-                  className="input-field pl-11 pr-11 text-sm"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-veltrix-gray-500 hover:text-white"
-                >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-veltrix-gray-300 mb-1.5">Confirm Password</label>
-              <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-veltrix-gray-500" />
-                <input
-                  type="password"
-                  required
-                  value={formData.confirmPassword}
-                  onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                  placeholder="••••••••"
-                  className="input-field pl-11 text-sm"
-                />
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full btn-primary py-3.5 flex items-center justify-center gap-2 disabled:opacity-50 text-sm font-bold mt-2"
-            >
-              {loading ? (
-                <div className="w-5 h-5 border-2 border-veltrix-black border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <>
-                  Create Account
-                  <ArrowRight className="w-4 h-4" />
-                </>
-              )}
-            </button>
-          </form>
-        )}
-
-        <p className="text-center mt-6 text-xs text-veltrix-gray-400">
-          Already have an account?{' '}
-          <Link to="/login" className="text-veltrix-blue hover:underline font-bold">
+        {/* Auth Mode Toggle Pill */}
+        <div className="grid grid-cols-2 p-1 bg-veltrix-black-light/80 border border-veltrix-gray-800 rounded-xl mb-4">
+          <Link 
+            to="/login" 
+            className="py-2 text-center text-xs font-semibold text-veltrix-gray-400 hover:text-white transition-colors"
+          >
             Sign In
           </Link>
-        </p>
+          <div className="py-2 text-center text-xs font-bold text-veltrix-black bg-veltrix-blue rounded-lg shadow-sm">
+            Create Account
+          </div>
+        </div>
+
+        {/* Card */}
+        <div className="bg-veltrix-black-light/95 backdrop-blur-xl border border-veltrix-gray-800 rounded-2xl p-6 sm:p-8 shadow-2xl">
+          {success ? (
+            <div className="py-6 text-center space-y-4 animate-fade-in">
+              <div className="w-16 h-16 bg-green-500/20 text-green-400 rounded-2xl flex items-center justify-center mx-auto shadow-[0_0_25px_rgba(34,197,94,0.3)]">
+                <CheckCircle className="w-8 h-8" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-white">Account Created Successfully! 🎉</h2>
+                <p className="text-xs text-veltrix-gray-300 mt-2 leading-relaxed">
+                  Welcome to CarryGoExpress! Your account <span className="text-veltrix-blue font-semibold">{registeredEmail}</span> has been registered securely.
+                </p>
+              </div>
+              <div className="pt-3">
+                <Link
+                  to="/login"
+                  className="w-full h-12 bg-veltrix-blue text-veltrix-black font-bold rounded-xl text-sm shadow-glow flex items-center justify-center gap-2 hover:shadow-glow-lg transition-all"
+                >
+                  <span>Proceed to Sign In</span>
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {error && (
+                <div className="p-3.5 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-xs flex items-start gap-2.5 animate-fade-in">
+                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                  <span className="leading-relaxed">{error}</span>
+                </div>
+              )}
+
+              {/* Full Name */}
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold text-veltrix-gray-300">
+                  Full Name *
+                </label>
+                <div className="relative">
+                  <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-veltrix-gray-500" />
+                  <input
+                    type="text"
+                    required
+                    autoComplete="name"
+                    value={formData.fullName}
+                    onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                    placeholder="e.g. David Adeleke"
+                    className="w-full h-12 pl-10 pr-4 bg-veltrix-black border border-veltrix-gray-700 rounded-xl text-white placeholder-veltrix-gray-600 focus:outline-none focus:border-veltrix-blue focus:ring-2 focus:ring-veltrix-blue/20 text-base sm:text-sm transition-all"
+                  />
+                </div>
+              </div>
+
+              {/* Email Address */}
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold text-veltrix-gray-300">
+                  Email Address *
+                </label>
+                <div className="relative">
+                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-veltrix-gray-500" />
+                  <input
+                    type="email"
+                    required
+                    autoComplete="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    placeholder="name@example.com"
+                    className="w-full h-12 pl-10 pr-4 bg-veltrix-black border border-veltrix-gray-700 rounded-xl text-white placeholder-veltrix-gray-600 focus:outline-none focus:border-veltrix-blue focus:ring-2 focus:ring-veltrix-blue/20 text-base sm:text-sm transition-all"
+                  />
+                </div>
+              </div>
+
+              {/* Password */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-semibold text-veltrix-gray-300">
+                    Password *
+                  </label>
+                  <span className="text-[10px] text-veltrix-gray-500 font-mono">Min 6 chars</span>
+                </div>
+                <div className="relative">
+                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-veltrix-gray-500" />
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    autoComplete="new-password"
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    placeholder="••••••••"
+                    className="w-full h-12 pl-10 pr-11 bg-veltrix-black border border-veltrix-gray-700 rounded-xl text-white placeholder-veltrix-gray-600 focus:outline-none focus:border-veltrix-blue focus:ring-2 focus:ring-veltrix-blue/20 text-base sm:text-sm transition-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 text-veltrix-gray-500 hover:text-white transition-colors rounded-lg focus:outline-none"
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Confirm Password */}
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold text-veltrix-gray-300">
+                  Confirm Password *
+                </label>
+                <div className="relative">
+                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-veltrix-gray-500" />
+                  <input
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    required
+                    autoComplete="new-password"
+                    value={formData.confirmPassword}
+                    onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                    placeholder="••••••••"
+                    className="w-full h-12 pl-10 pr-11 bg-veltrix-black border border-veltrix-gray-700 rounded-xl text-white placeholder-veltrix-gray-600 focus:outline-none focus:border-veltrix-blue focus:ring-2 focus:ring-veltrix-blue/20 text-base sm:text-sm transition-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 text-veltrix-gray-500 hover:text-white transition-colors rounded-lg focus:outline-none"
+                    aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+                {formData.confirmPassword && formData.password !== formData.confirmPassword && (
+                  <p className="text-[11px] text-red-400 mt-1 flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" /> Passwords do not match yet
+                  </p>
+                )}
+                {formData.confirmPassword && formData.password === formData.confirmPassword && (
+                  <p className="text-[11px] text-green-400 mt-1 flex items-center gap-1">
+                    <Check className="w-3 h-3" /> Passwords match
+                  </p>
+                )}
+              </div>
+
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full h-12 bg-veltrix-blue text-veltrix-black font-extrabold rounded-xl text-sm shadow-glow hover:shadow-glow-lg active:scale-[0.99] transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Creating Account...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Create CarryGoExpress Account</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          )}
+
+          <div className="mt-6 pt-5 border-t border-veltrix-gray-800 text-center">
+            <p className="text-xs text-veltrix-gray-400">
+              Already have an account?{' '}
+              <Link to="/login" className="text-veltrix-blue hover:underline font-bold transition-colors">
+                Sign In
+              </Link>
+            </p>
+          </div>
+        </div>
+
+        {/* Security Footer */}
+        <div className="mt-6 text-center text-[11px] text-veltrix-gray-500 flex items-center justify-center gap-1.5">
+          <Shield className="w-3.5 h-3.5 text-green-400" />
+          <span>Protected by Supabase Auth with Row Level Security</span>
+        </div>
       </div>
     </div>
   )

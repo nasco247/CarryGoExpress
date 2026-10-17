@@ -20,17 +20,8 @@ export default function AdminDashboard() {
     realtimeConnected, 
     fetchDashboardData, 
     isLoading,
-    changeOrderStatus,
-    seedStarterCatalog
+    changeOrderStatus
   } = useAdminStore()
-
-  const [seeding, setSeeding] = useState(false)
-
-  const handleSeed = async () => {
-    setSeeding(true)
-    await seedStarterCatalog()
-    setSeeding(false)
-  }
 
   // Derive dynamic monthly chart data exclusively from real orders
   const chartData = useMemo(() => {
@@ -142,24 +133,22 @@ export default function AdminDashboard() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5 self-start sm:self-auto">
-          {products.length === 0 && (
-            <button
-              onClick={handleSeed}
-              disabled={seeding}
-              className="flex items-center gap-2 px-3.5 py-2 sm:px-4 sm:py-2.5 bg-veltrix-blue text-veltrix-black font-bold rounded-xl text-xs shadow-glow hover:scale-105 transition-all"
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              {seeding ? 'Seeding...' : 'Seed Products'}
-            </button>
-          )}
+        <div className="flex items-center gap-2 sm:gap-2.5 self-start sm:self-auto">
+          <Link
+            to="/admin/products"
+            className="flex items-center gap-1.5 px-3.5 py-2 sm:px-4 sm:py-2.5 bg-veltrix-blue text-veltrix-black font-bold rounded-xl text-xs shadow-glow hover:scale-105 active:scale-95 transition-all"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>Manage Catalog</span>
+          </Link>
 
           <button
             onClick={() => fetchDashboardData()}
-            className="flex items-center gap-2 px-3.5 py-2 sm:px-4 sm:py-2.5 bg-veltrix-black-light border border-veltrix-gray-800 rounded-xl text-xs font-semibold text-veltrix-gray-300 hover:text-white hover:border-veltrix-blue/30 transition-all"
+            className="flex items-center gap-1.5 px-3 py-2 sm:px-3.5 sm:py-2.5 bg-veltrix-black-light border border-veltrix-gray-800 rounded-xl text-xs font-semibold text-veltrix-gray-300 hover:text-white hover:border-veltrix-blue/30 transition-all active:scale-95"
+            title="Refresh Realtime Stats"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
-            Refresh
+            <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin text-veltrix-blue' : ''}`} />
+            <span className="hidden sm:inline">Refresh</span>
           </button>
         </div>
       </div>

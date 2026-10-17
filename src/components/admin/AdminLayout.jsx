@@ -165,6 +165,11 @@ export default function AdminLayout() {
                 <Link
                   key={item.path}
                   to={item.path}
+                  onClick={() => {
+                    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+                      setSidebarOpen(false)
+                    }
+                  }}
                   className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200 group relative ${
                     isActive 
                       ? 'bg-veltrix-blue/20 text-veltrix-blue font-semibold' 
@@ -225,20 +230,36 @@ export default function AdminLayout() {
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Top Header */}
-        <header className="h-16 bg-veltrix-black-light/80 backdrop-blur-xl border-b border-veltrix-gray-800 flex items-center justify-between px-4 lg:px-8 sticky top-0 z-40">
-          <div className="flex items-center gap-4">
+        {/* Top Header with Prominent Top-Left Mobile Side Drawer Menu */}
+        <header className="h-16 bg-veltrix-black-light/80 backdrop-blur-xl border-b border-veltrix-gray-800 flex items-center justify-between px-3 sm:px-5 lg:px-8 sticky top-0 z-40">
+          <div className="flex items-center gap-2.5 sm:gap-4">
+            {/* Mobile Side Drawer Menu Toggle Button on Top-Left Corner */}
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="lg:hidden flex items-center gap-1.5 px-2.5 py-1.5 bg-veltrix-black border border-veltrix-gray-700/80 hover:border-veltrix-blue/60 text-white rounded-xl shadow-md active:scale-95 transition-all"
+              aria-label="Open side drawer navigation menu"
+              title="Open Navigation Menu"
+            >
+              <Menu className="w-5 h-5 text-veltrix-blue shrink-0" />
+              <span className="text-xs font-bold text-white tracking-tight">Menu</span>
+            </button>
+
+            {/* Desktop Sidebar Toggle */}
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="p-2 text-veltrix-gray-400 hover:text-white hover:bg-veltrix-gray-900 rounded-lg transition-all"
-              aria-label="Toggle sidebar"
+              className="hidden lg:flex p-2 text-veltrix-gray-400 hover:text-white hover:bg-veltrix-gray-900 rounded-lg transition-all"
+              aria-label="Toggle desktop sidebar"
             >
               {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
-            <div className="hidden sm:flex items-center gap-2 text-sm text-veltrix-gray-500">
-              <span className="font-semibold text-veltrix-blue">CarryGoExpress</span>
-              <ChevronRight className="w-4 h-4" />
-              <span className="text-white capitalize">
+
+            {/* Brand Title on Mobile & Breadcrumb on Tablet/Desktop */}
+            <div className="flex items-center gap-2">
+              <span className="font-black text-sm sm:text-base text-white tracking-tight">
+                CarryGo<span className="text-veltrix-blue">Express</span>
+              </span>
+              <span className="hidden sm:inline-block text-veltrix-gray-600">/</span>
+              <span className="hidden sm:inline-block text-xs font-semibold text-veltrix-gray-300 capitalize">
                 {location.pathname.replace('/admin', '').replace('/', '') || 'Realtime Dashboard'}
               </span>
             </div>
@@ -318,78 +339,87 @@ export default function AdminLayout() {
           <Outlet />
         </main>
 
-        {/* Mobile Bottom Navigation Bar */}
+        {/* Mobile Bottom Navigation Bar (Streamlined 4-item grid with zero overlapping) */}
         <nav 
           aria-label="Mobile Navigation"
-          className="lg:hidden fixed bottom-0 left-0 right-0 h-[calc(4.25rem+env(safe-area-inset-bottom,0px))] pb-[env(safe-area-inset-bottom,4px)] pt-1 bg-veltrix-black-light/95 backdrop-blur-2xl border-t border-veltrix-gray-800 z-40 flex items-center justify-between px-1.5 shadow-2xl"
+          className="lg:hidden fixed bottom-0 left-0 right-0 h-[calc(4rem+env(safe-area-inset-bottom,0px))] pb-[env(safe-area-inset-bottom,4px)] bg-veltrix-black-light/95 backdrop-blur-2xl border-t border-veltrix-gray-800 z-40 px-2 shadow-2xl"
         >
-          <Link 
-            to="/admin" 
-            className={`flex-1 flex flex-col items-center justify-center py-1.5 px-0.5 min-w-0 rounded-xl transition-all active:scale-95 ${
-              location.pathname === '/admin' 
-                ? 'text-veltrix-blue bg-veltrix-blue/10 border border-veltrix-blue/30 font-bold shadow-glow' 
-                : 'text-veltrix-gray-400 hover:text-white border border-transparent'
-            }`}
-          >
-            <LayoutDashboard className="w-5 h-5 shrink-0" />
-            <span className="text-[10px] tracking-tight truncate w-full text-center mt-0.5">Dashboard</span>
-          </Link>
+          <div className="grid grid-cols-4 gap-1.5 h-full max-w-md mx-auto items-center">
+            {/* 1. Dashboard */}
+            <Link 
+              to="/admin" 
+              className={`flex flex-col items-center justify-center py-1 px-1 rounded-xl transition-all duration-150 active:scale-95 touch-manipulation ${
+                location.pathname === '/admin' 
+                  ? 'text-veltrix-blue bg-veltrix-blue/15 border border-veltrix-blue/40 font-bold shadow-glow' 
+                  : 'text-veltrix-gray-400 hover:text-white border border-transparent hover:bg-veltrix-gray-900/60'
+              }`}
+            >
+              <LayoutDashboard className="w-5 h-5 shrink-0" />
+              <span className="text-[10px] font-semibold tracking-tight text-center truncate max-w-full leading-tight mt-0.5">
+                Dashboard
+              </span>
+            </Link>
 
-          <Link 
-            to="/admin/orders" 
-            className={`flex-1 flex flex-col items-center justify-center py-1.5 px-0.5 min-w-0 rounded-xl relative transition-all active:scale-95 ${
-              location.pathname === '/admin/orders' 
-                ? 'text-veltrix-blue bg-veltrix-blue/10 border border-veltrix-blue/30 font-bold shadow-glow' 
-                : 'text-veltrix-gray-400 hover:text-white border border-transparent'
-            }`}
-          >
-            <div className="relative">
-              <ShoppingCart className="w-5 h-5 shrink-0" />
-              {stats.pendingOrders > 0 && (
-                <span className="absolute -top-1 -right-1.5 w-2 h-2 rounded-full bg-veltrix-blue animate-pulse" />
-              )}
-            </div>
-            <span className="text-[10px] tracking-tight truncate w-full text-center mt-0.5">Orders</span>
-          </Link>
+            {/* 2. Live Orders */}
+            <Link 
+              to="/admin/orders" 
+              className={`flex flex-col items-center justify-center py-1 px-1 rounded-xl relative transition-all duration-150 active:scale-95 touch-manipulation ${
+                location.pathname === '/admin/orders' 
+                  ? 'text-veltrix-blue bg-veltrix-blue/15 border border-veltrix-blue/40 font-bold shadow-glow' 
+                  : 'text-veltrix-gray-400 hover:text-white border border-transparent hover:bg-veltrix-gray-900/60'
+              }`}
+            >
+              <div className="relative flex items-center justify-center">
+                <ShoppingCart className="w-5 h-5 shrink-0" />
+                {stats.pendingOrders > 0 && (
+                  <span className="absolute -top-1 -right-1.5 w-2 h-2 rounded-full bg-veltrix-blue ring-2 ring-veltrix-black animate-pulse" />
+                )}
+              </div>
+              <span className="text-[10px] font-semibold tracking-tight text-center truncate max-w-full leading-tight mt-0.5">
+                Orders
+              </span>
+            </Link>
 
-          <Link 
-            to="/admin/products" 
-            className={`flex-1 flex flex-col items-center justify-center py-1.5 px-0.5 min-w-0 rounded-xl transition-all active:scale-95 ${
-              location.pathname === '/admin/products' 
-                ? 'text-veltrix-blue bg-veltrix-blue/10 border border-veltrix-blue/30 font-bold shadow-glow' 
-                : 'text-veltrix-gray-400 hover:text-white border border-transparent'
-            }`}
-          >
-            <Package className="w-5 h-5 shrink-0" />
-            <span className="text-[10px] tracking-tight truncate w-full text-center mt-0.5">Catalog</span>
-          </Link>
+            {/* 3. Live Catalog */}
+            <Link 
+              to="/admin/products" 
+              className={`flex flex-col items-center justify-center py-1 px-1 rounded-xl relative transition-all duration-150 active:scale-95 touch-manipulation ${
+                location.pathname === '/admin/products' 
+                  ? 'text-veltrix-blue bg-veltrix-blue/15 border border-veltrix-blue/40 font-bold shadow-glow' 
+                  : 'text-veltrix-gray-400 hover:text-white border border-transparent hover:bg-veltrix-gray-900/60'
+              }`}
+            >
+              <div className="relative flex items-center justify-center">
+                <Package className="w-5 h-5 shrink-0" />
+                {stats.lowStock > 0 && (
+                  <span className="absolute -top-1 -right-1.5 w-2 h-2 rounded-full bg-yellow-400 ring-2 ring-veltrix-black" />
+                )}
+              </div>
+              <span className="text-[10px] font-semibold tracking-tight text-center truncate max-w-full leading-tight mt-0.5">
+                Catalog
+              </span>
+            </Link>
 
-          <Link 
-            to="/admin/visitors" 
-            className={`flex-1 flex flex-col items-center justify-center py-1.5 px-0.5 min-w-0 rounded-xl relative transition-all active:scale-95 ${
-              location.pathname === '/admin/visitors' 
-                ? 'text-veltrix-blue bg-veltrix-blue/10 border border-veltrix-blue/30 font-bold shadow-glow' 
-                : 'text-veltrix-gray-400 hover:text-white border border-transparent'
-            }`}
-          >
-            <div className="relative">
-              <Globe className="w-5 h-5 shrink-0" />
-              {stats.activeVisitorsNow > 0 && (
-                <span className="absolute -top-1 -right-1.5 w-2 h-2 rounded-full bg-green-400 animate-ping" />
-              )}
-            </div>
-            <span className="text-[10px] tracking-tight truncate w-full text-center mt-0.5">Visitors</span>
-          </Link>
-
-          <button 
-            type="button"
-            onClick={() => setSidebarOpen(true)} 
-            className="flex-1 flex flex-col items-center justify-center py-1.5 px-0.5 min-w-0 rounded-xl text-veltrix-gray-400 hover:text-white border border-transparent transition-all active:scale-95"
-            aria-label="Open navigation menu"
-          >
-            <Menu className="w-5 h-5 shrink-0" />
-            <span className="text-[10px] tracking-tight truncate w-full text-center mt-0.5">Menu</span>
-          </button>
+            {/* 4. Live Visitors */}
+            <Link 
+              to="/admin/visitors" 
+              className={`flex flex-col items-center justify-center py-1 px-1 rounded-xl relative transition-all duration-150 active:scale-95 touch-manipulation ${
+                location.pathname === '/admin/visitors' 
+                  ? 'text-veltrix-blue bg-veltrix-blue/15 border border-veltrix-blue/40 font-bold shadow-glow' 
+                  : 'text-veltrix-gray-400 hover:text-white border border-transparent hover:bg-veltrix-gray-900/60'
+              }`}
+            >
+              <div className="relative flex items-center justify-center">
+                <Globe className="w-5 h-5 shrink-0" />
+                {stats.activeVisitorsNow > 0 && (
+                  <span className="absolute -top-1 -right-1.5 w-2 h-2 rounded-full bg-green-400 ring-2 ring-veltrix-black animate-ping" />
+                )}
+              </div>
+              <span className="text-[10px] font-semibold tracking-tight text-center truncate max-w-full leading-tight mt-0.5">
+                Visitors
+              </span>
+            </Link>
+          </div>
         </nav>
       </div>
     </div>

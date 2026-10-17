@@ -11,8 +11,7 @@ import {
   updateProfile as sbUpdateProfile,
   getTransactions,
   updateTransactionStatus as sbUpdateTransactionStatus,
-  getSiteVisits,
-  CARRYGO_STARTER_PRODUCTS
+  getSiteVisits
 } from '../lib/supabase'
 
 export const useAdminStore = create((set, get) => ({

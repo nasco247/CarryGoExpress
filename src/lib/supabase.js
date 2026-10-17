@@ -464,18 +464,8 @@ export const CARRYGO_STARTER_PRODUCTS = [
 ]
 
 export const seedInitialProducts = async () => {
-  try {
-    const { count } = await supabase.from('products').select('*', { count: 'exact', head: true })
-    if (count === 0 || count === null) {
-      console.log('[Supabase] Seeding CarryGoExpress products...')
-      const { data, error } = await supabase.from('products').insert(CARRYGO_STARTER_PRODUCTS).select()
-      return { data, error, seeded: true }
-    }
-    return { count, seeded: false }
-  } catch (err) {
-    console.error('[Supabase] Error seeding initial products:', err)
-    return { error: err.message, seeded: false }
-  }
+  // Disabled: Only live backend products are stored and shown
+  return { seeded: false, message: 'Dummy products disabled. Live products only.' }
 }
 
 // ── Supabase Storage API ───────────────────────────────────────────────────

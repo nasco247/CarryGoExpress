@@ -95,6 +95,11 @@ export const getCurrentUser = async () => {
     // 3.5-second timeout to prevent indefinite hangs
     const userPromise = supabase.auth.getUser().then(({ data, error }) => {
       if (error) {
+        // "Auth session missing!" is standard for guest visitors who haven't signed in yet
+        if (error.name === 'AuthSessionMissingError' || error.message?.toLowerCase().includes('session missing')) {
+          return null
+        }
+        // Stale or corrupted session: reset local auth state
         console.warn('[Auth] Stale or invalid session detected, resetting local auth state:', error.message)
         signOut()
         return null

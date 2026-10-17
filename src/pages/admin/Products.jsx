@@ -281,7 +281,7 @@ export default function AdminProducts() {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <button
             onClick={() => setGeminiKeyModalOpen(true)}
             className="flex items-center gap-1.5 px-3 py-2 bg-purple-500/10 border border-purple-500/30 text-purple-300 rounded-xl text-xs font-semibold hover:bg-purple-500/20 transition-all"
@@ -298,7 +298,7 @@ export default function AdminProducts() {
 
           <button 
             onClick={openAddModal}
-            className="flex items-center gap-2 px-4 py-2.5 bg-veltrix-blue text-veltrix-black font-bold rounded-xl text-sm shadow-glow hover:scale-105 transition-all"
+            className="flex items-center gap-2 px-3.5 sm:px-4 py-2 sm:py-2.5 bg-veltrix-blue text-veltrix-black font-bold rounded-xl text-xs sm:text-sm shadow-glow hover:scale-105 transition-all"
           >
             <Plus className="w-4 h-4" />
             Add New Gadget
@@ -307,7 +307,7 @@ export default function AdminProducts() {
       </div>
 
       {/* Stats Summary */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
         {[
           { label: 'Gadgets in Store', value: products.length, icon: Package, color: 'blue' },
           { label: 'Active on Storefront', value: products.filter(p => p.status === 'active').length, icon: CheckCircle, color: 'green' },
@@ -316,19 +316,19 @@ export default function AdminProducts() {
         ].map((stat, i) => {
           const Icon = stat.icon
           return (
-            <div key={i} className="bg-veltrix-black-light rounded-xl border border-veltrix-gray-800/60 p-4">
-              <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+            <div key={i} className="bg-veltrix-black-light rounded-xl border border-veltrix-gray-800/60 p-3 sm:p-4">
+              <div className="flex items-center gap-2.5 sm:gap-3">
+                <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center shrink-0 ${
                   stat.color === 'blue' ? 'bg-veltrix-blue/20 text-veltrix-blue' :
                   stat.color === 'green' ? 'bg-green-500/20 text-green-400' :
                   stat.color === 'red' ? 'bg-red-500/20 text-red-400' :
                   'bg-yellow-500/20 text-yellow-400'
                 }`}>
-                  <Icon className="w-5 h-5" />
+                  <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
                 </div>
-                <div>
-                  <p className="text-xs text-veltrix-gray-400">{stat.label}</p>
-                  <p className="text-xl font-black text-white">{stat.value}</p>
+                <div className="min-w-0">
+                  <p className="text-[10px] sm:text-xs text-veltrix-gray-400 truncate">{stat.label}</p>
+                  <p className="text-lg sm:text-xl font-black text-white truncate">{stat.value}</p>
                 </div>
               </div>
             </div>
@@ -345,11 +345,11 @@ export default function AdminProducts() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search gadgets by name, model, brand (iPhone, Galaxy, MacBook)..."
-            className="w-full pl-11 pr-4 py-3 bg-veltrix-black-light border border-veltrix-gray-800 rounded-xl text-white placeholder-veltrix-gray-500 text-sm focus:border-veltrix-blue focus:outline-none"
+            className="w-full pl-11 pr-4 py-2.5 sm:py-3 bg-veltrix-black-light border border-veltrix-gray-800 rounded-xl text-white placeholder-veltrix-gray-500 text-xs sm:text-sm focus:border-veltrix-blue focus:outline-none"
           />
         </div>
 
-        <div className="flex flex-wrap sm:flex-nowrap gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 w-full md:w-auto">
           {/* Main Category */}
           <select
             value={categoryFilter}
@@ -357,7 +357,7 @@ export default function AdminProducts() {
               setCategoryFilter(e.target.value)
               setSubcategoryFilter('all')
             }}
-            className="px-3 py-3 bg-veltrix-black-light border border-veltrix-gray-800 rounded-xl text-xs text-white focus:border-veltrix-blue focus:outline-none"
+            className="w-full px-3 py-2.5 sm:py-3 bg-veltrix-black-light border border-veltrix-gray-800 rounded-xl text-xs text-white focus:border-veltrix-blue focus:outline-none"
           >
             <option value="all">All Categories</option>
             {GADGET_CATEGORIES.map(cat => (
@@ -370,7 +370,7 @@ export default function AdminProducts() {
             value={subcategoryFilter}
             onChange={(e) => setSubcategoryFilter(e.target.value)}
             disabled={categoryFilter === 'all'}
-            className="px-3 py-3 bg-veltrix-black-light border border-veltrix-gray-800 rounded-xl text-xs text-white focus:border-veltrix-blue focus:outline-none disabled:opacity-40"
+            className="w-full px-3 py-2.5 sm:py-3 bg-veltrix-black-light border border-veltrix-gray-800 rounded-xl text-xs text-white focus:border-veltrix-blue focus:outline-none disabled:opacity-40"
           >
             <option value="all">All Sub-categories</option>
             {categoryFilter !== 'all' && getSubcategoriesForCategory(categoryFilter).map(sub => (
@@ -382,7 +382,7 @@ export default function AdminProducts() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-3 bg-veltrix-black-light border border-veltrix-gray-800 rounded-xl text-xs text-white focus:border-veltrix-blue focus:outline-none"
+            className="w-full px-3 py-2.5 sm:py-3 bg-veltrix-black-light border border-veltrix-gray-800 rounded-xl text-xs text-white focus:border-veltrix-blue focus:outline-none"
           >
             <option value="all">All Status</option>
             <option value="active">Active</option>
@@ -547,13 +547,13 @@ export default function AdminProducts() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between pt-1 text-xs">
+              <div className="flex flex-wrap items-center justify-between gap-2 pt-1 text-xs">
                 {/* Stock Controls */}
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 sm:gap-2">
                   <span className="text-[11px] text-veltrix-gray-400">Stock:</span>
                   <button
                     onClick={() => adjustStock(product.id, -1)}
-                    className="w-7 h-7 bg-veltrix-black border border-veltrix-gray-700 rounded-lg flex items-center justify-center text-white"
+                    className="w-7 h-7 bg-veltrix-black border border-veltrix-gray-700 rounded-lg flex items-center justify-center text-white active:scale-95 transition-all"
                   >
                     -
                   </button>
@@ -562,7 +562,7 @@ export default function AdminProducts() {
                   </span>
                   <button
                     onClick={() => adjustStock(product.id, 1)}
-                    className="w-7 h-7 bg-veltrix-black border border-veltrix-gray-700 rounded-lg flex items-center justify-center text-white"
+                    className="w-7 h-7 bg-veltrix-black border border-veltrix-gray-700 rounded-lg flex items-center justify-center text-white active:scale-95 transition-all"
                   >
                     +
                   </button>
@@ -571,7 +571,7 @@ export default function AdminProducts() {
                 {/* Status Toggle */}
                 <button
                   onClick={() => toggleStatus(product)}
-                  className={`px-2.5 py-1 rounded-full text-[10px] font-bold border ${getStatusColor(product.status)}`}
+                  className={`px-2.5 py-1 rounded-full text-[10px] font-bold border transition-all ${getStatusColor(product.status)}`}
                 >
                   {product.status}
                 </button>
@@ -605,8 +605,8 @@ export default function AdminProducts() {
 
       {/* Add / Edit Gadget Modal with Gemini AI Product Vision */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="w-full max-w-2xl bg-veltrix-black-light rounded-2xl border border-veltrix-gray-800 shadow-2xl max-h-[90vh] overflow-y-auto animate-fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm">
+          <div className="w-full max-w-2xl bg-veltrix-black-light rounded-2xl border border-veltrix-gray-800 shadow-2xl max-h-[88dvh] overflow-y-auto animate-fade-in">
             <div className="p-6 border-b border-veltrix-gray-800 flex items-center justify-between">
               <div>
                 <h2 className="text-xl font-bold text-white">
@@ -916,8 +916,8 @@ export default function AdminProducts() {
 
       {/* ── Gemini API Key Configuration Modal ── */}
       {geminiKeyModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
-          <div className="w-full max-w-md bg-veltrix-black-light rounded-2xl border border-veltrix-gray-800 shadow-2xl p-6 space-y-4 animate-fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md">
+          <div className="w-full max-w-md bg-veltrix-black-light rounded-2xl border border-veltrix-gray-800 shadow-2xl p-4 sm:p-6 space-y-4 animate-fade-in max-h-[88dvh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-veltrix-gray-800">
               <div className="flex items-center gap-2">
                 <Sparkles className="w-5 h-5 text-purple-400" />

@@ -120,6 +120,17 @@ export default function AdminLayout() {
                 </div>
               )}
             </Link>
+
+            {/* Mobile close sidebar button */}
+            {sidebarOpen && (
+              <button
+                onClick={() => setSidebarOpen(false)}
+                className="lg:hidden p-2 text-veltrix-gray-400 hover:text-white hover:bg-veltrix-gray-800 rounded-lg transition-colors"
+                aria-label="Close sidebar"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            )}
           </div>
 
           {/* Realtime Status Indicator in Sidebar */}
@@ -303,65 +314,81 @@ export default function AdminLayout() {
         </header>
 
         {/* Page Body */}
-        <main className="flex-1 p-4 lg:p-8 pb-24 lg:pb-8 overflow-y-auto">
+        <main className="flex-1 w-full max-w-full min-w-0 p-3.5 sm:p-5 lg:p-8 pb-28 lg:pb-8 overflow-y-auto">
           <Outlet />
         </main>
 
         {/* Mobile Bottom Navigation Bar */}
-        <nav className="lg:hidden fixed bottom-0 left-0 right-0 h-16 bg-veltrix-black-light/95 backdrop-blur-2xl border-t border-veltrix-gray-800 z-40 flex items-center justify-around px-2 shadow-2xl">
+        <nav 
+          aria-label="Mobile Navigation"
+          className="lg:hidden fixed bottom-0 left-0 right-0 h-[calc(4.25rem+env(safe-area-inset-bottom,0px))] pb-[env(safe-area-inset-bottom,4px)] pt-1 bg-veltrix-black-light/95 backdrop-blur-2xl border-t border-veltrix-gray-800 z-40 flex items-center justify-between px-1.5 shadow-2xl"
+        >
           <Link 
             to="/admin" 
-            className={`flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition-all ${
-              location.pathname === '/admin' ? 'text-veltrix-blue font-bold' : 'text-veltrix-gray-400 hover:text-white'
+            className={`flex-1 flex flex-col items-center justify-center py-1.5 px-0.5 min-w-0 rounded-xl transition-all active:scale-95 ${
+              location.pathname === '/admin' 
+                ? 'text-veltrix-blue bg-veltrix-blue/10 border border-veltrix-blue/30 font-bold shadow-glow' 
+                : 'text-veltrix-gray-400 hover:text-white border border-transparent'
             }`}
           >
-            <LayoutDashboard className="w-5 h-5" />
-            <span className="text-[10px]">Dashboard</span>
+            <LayoutDashboard className="w-5 h-5 shrink-0" />
+            <span className="text-[10px] tracking-tight truncate w-full text-center mt-0.5">Dashboard</span>
           </Link>
 
           <Link 
             to="/admin/orders" 
-            className={`flex flex-col items-center gap-1 py-1 px-3 rounded-xl relative transition-all ${
-              location.pathname === '/admin/orders' ? 'text-veltrix-blue font-bold' : 'text-veltrix-gray-400 hover:text-white'
+            className={`flex-1 flex flex-col items-center justify-center py-1.5 px-0.5 min-w-0 rounded-xl relative transition-all active:scale-95 ${
+              location.pathname === '/admin/orders' 
+                ? 'text-veltrix-blue bg-veltrix-blue/10 border border-veltrix-blue/30 font-bold shadow-glow' 
+                : 'text-veltrix-gray-400 hover:text-white border border-transparent'
             }`}
           >
-            <ShoppingCart className="w-5 h-5" />
-            <span className="text-[10px]">Orders</span>
-            {stats.pendingOrders > 0 && (
-              <span className="absolute top-1 right-2 w-2 h-2 rounded-full bg-veltrix-blue animate-pulse" />
-            )}
+            <div className="relative">
+              <ShoppingCart className="w-5 h-5 shrink-0" />
+              {stats.pendingOrders > 0 && (
+                <span className="absolute -top-1 -right-1.5 w-2 h-2 rounded-full bg-veltrix-blue animate-pulse" />
+              )}
+            </div>
+            <span className="text-[10px] tracking-tight truncate w-full text-center mt-0.5">Orders</span>
           </Link>
 
           <Link 
             to="/admin/products" 
-            className={`flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition-all ${
-              location.pathname === '/admin/products' ? 'text-veltrix-blue font-bold' : 'text-veltrix-gray-400 hover:text-white'
+            className={`flex-1 flex flex-col items-center justify-center py-1.5 px-0.5 min-w-0 rounded-xl transition-all active:scale-95 ${
+              location.pathname === '/admin/products' 
+                ? 'text-veltrix-blue bg-veltrix-blue/10 border border-veltrix-blue/30 font-bold shadow-glow' 
+                : 'text-veltrix-gray-400 hover:text-white border border-transparent'
             }`}
           >
-            <Package className="w-5 h-5" />
-            <span className="text-[10px]">Catalog</span>
+            <Package className="w-5 h-5 shrink-0" />
+            <span className="text-[10px] tracking-tight truncate w-full text-center mt-0.5">Catalog</span>
           </Link>
 
           <Link 
             to="/admin/visitors" 
-            className={`flex flex-col items-center gap-1 py-1 px-3 rounded-xl relative transition-all ${
-              location.pathname === '/admin/visitors' ? 'text-veltrix-blue font-bold' : 'text-veltrix-gray-400 hover:text-white'
+            className={`flex-1 flex flex-col items-center justify-center py-1.5 px-0.5 min-w-0 rounded-xl relative transition-all active:scale-95 ${
+              location.pathname === '/admin/visitors' 
+                ? 'text-veltrix-blue bg-veltrix-blue/10 border border-veltrix-blue/30 font-bold shadow-glow' 
+                : 'text-veltrix-gray-400 hover:text-white border border-transparent'
             }`}
           >
-            <Globe className="w-5 h-5" />
-            <span className="text-[10px]">Visitors</span>
-            {stats.activeVisitorsNow > 0 && (
-              <span className="absolute top-1 right-2 w-2 h-2 rounded-full bg-green-400 animate-ping" />
-            )}
+            <div className="relative">
+              <Globe className="w-5 h-5 shrink-0" />
+              {stats.activeVisitorsNow > 0 && (
+                <span className="absolute -top-1 -right-1.5 w-2 h-2 rounded-full bg-green-400 animate-ping" />
+              )}
+            </div>
+            <span className="text-[10px] tracking-tight truncate w-full text-center mt-0.5">Visitors</span>
           </Link>
 
           <button 
+            type="button"
             onClick={() => setSidebarOpen(true)} 
-            className="flex flex-col items-center gap-1 py-1 px-3 rounded-xl text-veltrix-gray-400 hover:text-white transition-all"
+            className="flex-1 flex flex-col items-center justify-center py-1.5 px-0.5 min-w-0 rounded-xl text-veltrix-gray-400 hover:text-white border border-transparent transition-all active:scale-95"
             aria-label="Open navigation menu"
           >
-            <Menu className="w-5 h-5" />
-            <span className="text-[10px]">Menu</span>
+            <Menu className="w-5 h-5 shrink-0" />
+            <span className="text-[10px] tracking-tight truncate w-full text-center mt-0.5">Menu</span>
           </button>
         </nav>
       </div>

@@ -45,17 +45,17 @@ export default function AdminOrders() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white">Live Customer Orders</h1>
-          <p className="text-sm text-veltrix-gray-400 mt-1">
+          <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">Live Customer Orders</h1>
+          <p className="text-xs sm:text-sm text-veltrix-gray-400 mt-1">
             Realtime stream of customer checkouts, fulfillment lifecycle, and payment verification.
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 self-start sm:self-auto">
           <button 
             onClick={() => fetchDashboardData()}
-            className="flex items-center gap-2 px-4 py-2.5 bg-veltrix-black-light border border-veltrix-gray-800 rounded-xl text-xs font-semibold text-veltrix-gray-300 hover:text-white transition-all"
+            className="flex items-center gap-2 px-3.5 py-2 sm:px-4 sm:py-2.5 bg-veltrix-black-light border border-veltrix-gray-800 rounded-xl text-xs font-semibold text-veltrix-gray-300 hover:text-white transition-all"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
             Refresh Orders
@@ -64,7 +64,7 @@ export default function AdminOrders() {
       </div>
 
       {/* Stats Summary */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
         {[
           { label: 'Total Placed', value: orders.length, icon: Package, color: 'blue' },
           { label: 'Completed', value: orders.filter(o => o.status === 'completed').length, icon: CheckCircle, color: 'green' },
@@ -73,19 +73,19 @@ export default function AdminOrders() {
         ].map((stat, i) => {
           const Icon = stat.icon
           return (
-            <div key={i} className="bg-veltrix-black-light rounded-xl border border-veltrix-gray-800/60 p-4">
-              <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+            <div key={i} className="bg-veltrix-black-light rounded-xl border border-veltrix-gray-800/60 p-3 sm:p-4">
+              <div className="flex items-center gap-2.5 sm:gap-3">
+                <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center shrink-0 ${
                   stat.color === 'blue' ? 'bg-veltrix-blue/20 text-veltrix-blue' :
                   stat.color === 'green' ? 'bg-green-500/20 text-green-400' :
                   stat.color === 'yellow' ? 'bg-yellow-500/20 text-yellow-400' :
                   'bg-purple-500/20 text-purple-400'
                 }`}>
-                  <Icon className="w-5 h-5" />
+                  <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
                 </div>
-                <div>
-                  <p className="text-xs text-veltrix-gray-400">{stat.label}</p>
-                  <p className="text-xl font-black text-white">{stat.value}</p>
+                <div className="min-w-0">
+                  <p className="text-[10px] sm:text-xs text-veltrix-gray-400 truncate">{stat.label}</p>
+                  <p className="text-lg sm:text-xl font-black text-white truncate">{stat.value}</p>
                 </div>
               </div>
             </div>

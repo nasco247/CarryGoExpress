@@ -17,6 +17,9 @@ export default function AdminVisitors() {
   const [deviceFilter, setDeviceFilter] = useState('all')
   const [selectedVisit, setSelectedVisit] = useState(null)
 
+  const INITIAL_LIMIT = 8
+  const [visibleCount, setVisibleCount] = useState(INITIAL_LIMIT)
+
   // Filtered visits
   const filteredVisits = useMemo(() => {
     return visits.filter(v => {
@@ -33,6 +36,11 @@ export default function AdminVisitors() {
       return matchesSearch && matchesDevice
     })
   }, [visits, searchQuery, deviceFilter])
+
+  // Paginated visible visits for stream
+  const visibleVisits = useMemo(() => {
+    return filteredVisits.slice(0, visibleCount)
+  }, [filteredVisits, visibleCount])
 
   // Hourly or Daily timeline distribution
   const trafficChartData = useMemo(() => {
@@ -339,7 +347,7 @@ export default function AdminVisitors() {
               </tr>
             </thead>
             <tbody className="divide-y divide-veltrix-gray-800/40">
-              {filteredVisits.map((v) => (
+              {visibleVisits.map((v) => (
                 <tr key={v.id} className="hover:bg-veltrix-gray-900/30 transition-colors">
                   <td className="px-6 py-3.5">
                     <span className="font-mono font-bold text-veltrix-blue">{v.ip_address}</span>
@@ -388,31 +396,35 @@ export default function AdminVisitors() {
 
         {/* Mobile Card List View */}
         <div className="block md:hidden divide-y divide-veltrix-gray-800">
-          {filteredVisits.map((v) => (
-            <div key={v.id} className="p-4 space-y-2 hover:bg-veltrix-gray-900/30">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="text-lg">{v.country_flag || '🌐'}</span>
-                  <div>
-                    <span className="font-mono font-bold text-xs text-veltrix-blue">{v.ip_address}</span>
-                    <p className="text-[11px] text-veltrix-gray-400">{v.city || 'Unknown'}, {v.country || ''}</p>
+          {visibleVisits.map((v) => (
+            <div key={v.id} className="p-3.5 sm:p-4 space-y-2.5 hover:bg-veltrix-gray-900/30">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="text-xl shrink-0">{v.country_flag || '🌐'}</span>
+                  <div className="min-w-0">
+                    <span className="font-mono font-bold text-xs text-veltrix-blue block truncate">{v.ip_address}</span>
+                    <p className="text-[11px] text-veltrix-gray-400 truncate">{v.city || 'Unknown'}, {v.country || ''}</p>
                   </div>
                 </div>
-                <span className="text-[10px] text-veltrix-gray-500">
+                <span className="text-[10px] text-veltrix-gray-500 font-mono shrink-0">
                   {v.created_at ? new Date(v.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Now'}
                 </span>
               </div>
 
-              <div className="flex items-center justify-between text-xs bg-veltrix-black p-2 rounded-lg font-mono">
-                <span className="text-white truncate max-w-[200px]">{v.page_path}</span>
-                <span className="text-[10px] text-cyan-400 font-bold uppercase">{v.device_type}</span>
+              <div className="flex items-center justify-between gap-2 text-xs bg-veltrix-black p-2.5 rounded-xl font-mono border border-veltrix-gray-800/60">
+                <span className="text-white truncate max-w-[200px]" title={v.page_path}>{v.page_path}</span>
+                <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full shrink-0 ${
+                  v.device_type === 'mobile' ? 'bg-cyan-500/20 text-cyan-400' : 'bg-blue-500/20 text-blue-400'
+                }`}>
+                  {v.device_type}
+                </span>
               </div>
 
-              <div className="flex items-center justify-between pt-1">
-                <span className="text-[11px] text-veltrix-gray-500">{v.browser} on {v.os}</span>
+              <div className="flex items-center justify-between pt-0.5 text-xs">
+                <span className="text-[11px] text-veltrix-gray-500 truncate max-w-[180px]">{v.browser} • {v.os}</span>
                 <button
                   onClick={() => setSelectedVisit(v)}
-                  className="px-3 py-1 bg-veltrix-gray-900 text-veltrix-blue rounded-lg text-xs font-semibold"
+                  className="px-3 py-1 bg-veltrix-gray-900 hover:bg-veltrix-blue hover:text-veltrix-black text-veltrix-blue rounded-lg text-xs font-semibold border border-veltrix-gray-800 transition-colors shrink-0"
                 >
                   View Details
                 </button>
@@ -420,6 +432,54 @@ export default function AdminVisitors() {
             </div>
           ))}
         </div>
+
+        {/* Live Visitor Stream Pagination & Show More Actions */}
+        {filteredVisits.length > 0 && (
+          <div className="p-3.5 sm:p-5 border-t border-veltrix-gray-800 bg-veltrix-black/40 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="flex items-center gap-2 text-xs text-veltrix-gray-400">
+              <span>Showing</span>
+              <span className="font-bold text-white px-2 py-0.5 bg-veltrix-gray-900 border border-veltrix-gray-800 rounded-md font-mono text-[11px]">
+                {Math.min(visibleCount, filteredVisits.length)}
+              </span>
+              <span>of</span>
+              <span className="font-bold text-veltrix-blue font-mono text-[11px]">
+                {filteredVisits.length}
+              </span>
+              <span>visitors</span>
+            </div>
+
+            {filteredVisits.length > INITIAL_LIMIT && (
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                {visibleCount < filteredVisits.length ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setVisibleCount(prev => Math.min(prev + 10, filteredVisits.length))}
+                      className="flex-1 sm:flex-none px-4 py-2 bg-veltrix-gray-900 hover:bg-veltrix-blue hover:text-veltrix-black text-white text-xs font-bold rounded-xl border border-veltrix-gray-800 hover:border-veltrix-blue transition-all active:scale-95"
+                    >
+                      Show More (+10)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setVisibleCount(filteredVisits.length)}
+                      className="flex-1 sm:flex-none px-4 py-2 bg-veltrix-blue text-veltrix-black text-xs font-bold rounded-xl shadow-glow hover:bg-veltrix-blue-dark transition-all active:scale-95"
+                    >
+                      View Full List ({filteredVisits.length})
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setVisibleCount(INITIAL_LIMIT)}
+                    className="w-full sm:w-auto px-4 py-2 bg-veltrix-gray-900 hover:bg-veltrix-gray-800 text-veltrix-gray-300 text-xs font-bold rounded-xl border border-veltrix-gray-800 transition-all active:scale-95"
+                  >
+                    Show Less (Collapse)
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {filteredVisits.length === 0 && (
           <div className="text-center py-12 text-veltrix-gray-500 text-xs">
@@ -430,8 +490,8 @@ export default function AdminVisitors() {
 
       {/* Detail Inspection Modal */}
       {selectedVisit && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="bg-veltrix-black-light border border-veltrix-gray-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-veltrix-black-light border border-veltrix-gray-800 rounded-2xl w-full max-w-lg max-h-[85dvh] overflow-y-auto p-4 sm:p-6 shadow-2xl space-y-4 animate-fade-in">
             <div className="flex items-center justify-between border-b border-veltrix-gray-800 pb-3">
               <div className="flex items-center gap-2">
                 <span className="text-2xl">{selectedVisit.country_flag || '🌐'}</span>

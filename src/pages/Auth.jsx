@@ -260,7 +260,13 @@ export function Register() {
       })
 
       if (sbError) {
-        setError(sbError.message || 'Failed to create account. Please try again.')
+        let msg = sbError.message || 'Failed to create account. Please try again.'
+        if (msg.toLowerCase().includes('database error saving new user')) {
+          msg = 'Database schema notice: Please run the updated supabase_schema.sql in your Supabase SQL Editor to enable automatic customer profile creation.'
+        } else if (msg.toLowerCase().includes('rate limit')) {
+          msg = 'Supabase email rate limit reached. In your Supabase Dashboard under Authentication -> Providers -> Email, disable "Confirm email" for instant account creation.'
+        }
+        setError(msg)
         setLoading(false)
         return
       }

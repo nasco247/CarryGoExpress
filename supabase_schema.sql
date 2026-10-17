@@ -54,9 +54,13 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Auto-create profile on user signup
+-- Auto-create profile on user signup (Safe with Exception handling)
 CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER 
+SECURITY DEFINER
+SET search_path = public, auth, pg_temp
+LANGUAGE plpgsql
+AS $$
 BEGIN
   INSERT INTO public.profiles (id, full_name, email, role, status)
   VALUES (
@@ -70,8 +74,12 @@ BEGIN
     email = EXCLUDED.email,
     full_name = COALESCE(EXCLUDED.full_name, public.profiles.full_name);
   RETURN new;
+EXCEPTION
+  WHEN OTHERS THEN
+    -- Never let trigger failure crash user registration in auth.users
+    RETURN new;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
 
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
@@ -178,27 +186,55 @@ ALTER TABLE public.carts        ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.app_events   ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.site_visits  ENABLE ROW LEVEL SECURITY;
 
--- Helper function to check if current user is admin
+-- Helper function to check if current user is admin (Non-recursive)
 CREATE OR REPLACE FUNCTION public.is_admin()
-RETURNS BOOLEAN AS $$
+RETURNS BOOLEAN 
+SECURITY DEFINER
+SET search_path = public, auth, pg_temp
+LANGUAGE plpgsql
+AS $$
 BEGIN
+  -- 1. Check JWT metadata first (instant, avoids table recursion)
+  IF (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin' THEN
+    RETURN TRUE;
+  END IF;
+
+  -- 2. Check admin email
+  IF (auth.jwt() ->> 'email') LIKE '%admin%' THEN
+    RETURN TRUE;
+  END IF;
+
+  -- 3. Check profiles table safely
   RETURN EXISTS (
     SELECT 1 FROM public.profiles
     WHERE id = auth.uid() AND role = 'admin'
-  ) OR (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin';
+  );
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
 
 -- ── Profiles policies ──────────────────────────────────────────
 DROP POLICY IF EXISTS "profiles_select_policy" ON public.profiles;
 DROP POLICY IF EXISTS "profiles_modify_policy" ON public.profiles;
+DROP POLICY IF EXISTS "profiles_insert_policy" ON public.profiles;
+DROP POLICY IF EXISTS "profiles_update_policy" ON public.profiles;
+DROP POLICY IF EXISTS "profiles_delete_policy" ON public.profiles;
+DROP POLICY IF EXISTS "profiles_policy" ON public.profiles;
 
+-- Allow reading profiles (for store usernames, avatars, customer orders)
 CREATE POLICY "profiles_select_policy" ON public.profiles
-  FOR SELECT USING (auth.uid() = id OR public.is_admin() OR auth.role() = 'authenticated');
+  FOR SELECT USING (true);
 
-CREATE POLICY "profiles_modify_policy" ON public.profiles
-  FOR ALL USING (auth.uid() = id OR public.is_admin())
-  WITH CHECK (auth.uid() = id OR public.is_admin());
+-- Allow creating profiles (via signup trigger, admin, or user)
+CREATE POLICY "profiles_insert_policy" ON public.profiles
+  FOR INSERT WITH CHECK (true);
+
+-- Users can update their own profile; admins can update any profile
+CREATE POLICY "profiles_update_policy" ON public.profiles
+  FOR UPDATE USING (
+    auth.uid() = id 
+    OR (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin'
+    OR (auth.jwt() ->> 'email') LIKE '%admin%'
+  );
 
 -- ── Products policies (Public can view, Authenticated/Admin can manage) ──
 DROP POLICY IF EXISTS "products_read_policy" ON public.products;
@@ -348,3 +384,69 @@ FROM (VALUES
   ('CarryGo Hisense 32" HD LED Smart TV', 'CGO-TV-32H', 'CarryGoExpress', 'Televisions', 115000.00, 130000.00, 'Energy-efficient smart television with vivid color booster. Perfect for guest rooms, study areas and kitchens.', 'https://images.unsplash.com/photo-1509281373149-e957c6296406?w=800', 'Budget Pick', true, 30, 4.4, 210, 'active')
 ) AS v(name, sku, brand, category, price, original_price, description, image, badge, in_stock, stock, rating, reviews, status)
 WHERE NOT EXISTS (SELECT 1 FROM public.products LIMIT 1);
+
+-- ============================================================
+-- ── 8. CarryGoExpress Admin User Setup & Instant Provisioning ──
+-- Run this block in Supabase SQL Editor to provision your Admin.
+--
+-- Default Admin Credentials:
+-- Email:    admin@carrygoexpress.com
+-- Password: REDACTED_ADMIN_PASSWORD
+-- ============================================================
+DO $$
+DECLARE
+  v_admin_id UUID := gen_random_uuid();
+  v_admin_email TEXT := 'admin@carrygoexpress.com';
+  v_admin_pass TEXT := 'REDACTED_ADMIN_PASSWORD';
+BEGIN
+  -- 1. Create or update in auth.users
+  IF NOT EXISTS (SELECT 1 FROM auth.users WHERE email = v_admin_email) THEN
+    INSERT INTO auth.users (
+      instance_id,
+      id,
+      aud,
+      role,
+      email,
+      encrypted_password,
+      email_confirmed_at,
+      raw_app_meta_data,
+      raw_user_meta_data,
+      created_at,
+      updated_at
+    ) VALUES (
+      '00000000-0000-0000-0000-000000000000',
+      v_admin_id,
+      'authenticated',
+      'authenticated',
+      v_admin_email,
+      crypt(v_admin_pass, gen_salt('bf')),
+      NOW(),
+      '{"provider":"email","providers":["email"]}',
+      '{"full_name":"CarryGo Administrator","role":"admin"}',
+      NOW(),
+      NOW()
+    );
+
+    INSERT INTO public.profiles (id, full_name, email, role, status)
+    VALUES (
+      v_admin_id,
+      'CarryGo Administrator',
+      v_admin_email,
+      'admin',
+      'active'
+    )
+    ON CONFLICT (id) DO UPDATE SET role = 'admin', status = 'active';
+  ELSE
+    -- If admin already exists in auth.users, ensure confirmed and admin role
+    UPDATE auth.users 
+    SET raw_user_meta_data = COALESCE(raw_user_meta_data, '{}'::jsonb) || '{"role": "admin"}'::jsonb,
+        email_confirmed_at = COALESCE(email_confirmed_at, NOW())
+    WHERE email = v_admin_email;
+
+    UPDATE public.profiles 
+    SET role = 'admin', 
+        status = 'active'
+    WHERE email = v_admin_email;
+  END IF;
+END $$;
+

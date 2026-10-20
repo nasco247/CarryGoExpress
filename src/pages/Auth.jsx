@@ -81,8 +81,8 @@ export function Login() {
         {/* Card Header & Brand */}
         <div className="text-center mb-6">
           <Link to="/" className="inline-block group mb-3">
-            <div className="w-14 h-14 bg-gradient-to-br from-veltrix-blue to-veltrix-blue-dark rounded-2xl flex items-center justify-center mx-auto shadow-glow group-hover:scale-105 transition-transform">
-              <span className="text-veltrix-black font-black text-2xl tracking-tighter">CG</span>
+            <div className="w-14 h-14 rounded-2xl overflow-hidden mx-auto shadow-glow group-hover:scale-105 transition-transform border border-veltrix-blue/30 bg-black flex items-center justify-center">
+              <img src="/logo.png" alt="CarryGoExpress" className="w-full h-full object-cover" />
             </div>
           </Link>
           <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
@@ -339,8 +339,8 @@ export function Register() {
         {/* Header Branding */}
         <div className="text-center mb-6">
           <Link to="/" className="inline-block group mb-3">
-            <div className="w-14 h-14 bg-gradient-to-br from-veltrix-blue to-veltrix-blue-dark rounded-2xl flex items-center justify-center mx-auto shadow-glow group-hover:scale-105 transition-transform">
-              <span className="text-veltrix-black font-black text-2xl tracking-tighter">CG</span>
+            <div className="w-14 h-14 rounded-2xl overflow-hidden mx-auto shadow-glow group-hover:scale-105 transition-transform border border-veltrix-blue/30 bg-black flex items-center justify-center">
+              <img src="/logo.png" alt="CarryGoExpress" className="w-full h-full object-cover" />
             </div>
           </Link>
           <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">

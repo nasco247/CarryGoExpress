@@ -78,8 +78,8 @@ export default function Navbar() {
         <div className="flex items-center justify-between h-16 lg:h-20">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2.5 shrink-0 group">
-            <div className="w-10 h-10 bg-gradient-to-br from-veltrix-blue to-veltrix-blue-dark rounded-xl flex items-center justify-center shadow-glow group-hover:scale-105 transition-transform">
-              <span className="text-veltrix-black font-black text-xl tracking-tighter">CG</span>
+            <div className="w-10 h-10 rounded-xl overflow-hidden shadow-glow group-hover:scale-105 transition-transform border border-veltrix-blue/30 bg-black flex items-center justify-center">
+              <img src="/logo.png" alt="CarryGoExpress" className="w-full h-full object-cover" />
             </div>
             <div>
               <h1 className="text-xl font-black tracking-tight leading-none text-white">

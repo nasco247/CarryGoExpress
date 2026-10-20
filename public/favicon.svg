@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="100%" height="100%">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0E131F"/>
+      <stop offset="100%" stop-color="#05070B"/>
+    </linearGradient>
+
+    <!-- Brand Cyan Neon Gradient -->
+    <linearGradient id="neonCyan" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38E1FF"/>
+      <stop offset="50%" stop-color="#00D4FF"/>
+      <stop offset="100%" stop-color="#0072FF"/>
+    </linearGradient>
+
+    <!-- Accent Glow Filter -->
+    <filter id="neonGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3.5" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- App Icon Badge -->
+  <rect x="4" y="4" width="120" height="120" rx="30" fill="url(#bgGrad)" stroke="#00D4FF" stroke-width="2" stroke-opacity="0.4"/>
+
+  <!-- Subtle Inner Border Highlight -->
+  <rect x="6" y="6" width="116" height="116" rx="28" fill="none" stroke="#FFFFFF" stroke-width="1" stroke-opacity="0.08"/>
+
+  <!-- Logo Graphics: Monogram CG with Express Fast Movement -->
+  <g filter="url(#neonGlow)">
+    <!-- "C" Arc -->
+    <path d="M 60 36 C 44 36 32 48 32 64 C 32 80 44 92 60 92 C 67 92 73 89 78 84" 
+          fill="none" 
+          stroke="url(#neonCyan)" 
+          stroke-width="10" 
+          stroke-linecap="round"/>
+
+    <!-- "G" Arc & Arrow -->
+    <path d="M 72 40 C 85 40 96 51 96 64 C 96 79 85 90 70 90 C 58 90 50 83 48 74" 
+          fill="none" 
+          stroke="url(#neonCyan)" 
+          stroke-width="10" 
+          stroke-linecap="round"/>
+
+    <!-- Horizontal crossbar for G -->
+    <path d="M 72 64 L 96 64" 
+          stroke="url(#neonCyan)" 
+          stroke-width="9" 
+          stroke-linecap="round"/>
+
+    <!-- Express Speed Arrow indicator -->
+    <polygon points="98,64 88,57 88,71" fill="#00D4FF"/>
+  </g>
+
+  <!-- Glowing Center Sparkle Dot -->
+  <circle cx="64" cy="64" r="3" fill="#FFFFFF" opacity="0.9"/>
+</svg>

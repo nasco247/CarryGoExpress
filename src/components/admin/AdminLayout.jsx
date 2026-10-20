@@ -106,8 +106,8 @@ export default function AdminLayout() {
           {/* Logo */}
           <div className="h-20 flex items-center justify-between px-6 border-b border-veltrix-gray-800">
             <Link to="/admin" className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-veltrix-blue to-veltrix-blue-dark rounded-xl flex items-center justify-center shrink-0 shadow-glow">
-                <span className="text-veltrix-black font-black text-lg">CG</span>
+              <div className="w-10 h-10 rounded-xl overflow-hidden shrink-0 shadow-glow border border-veltrix-blue/30 bg-black flex items-center justify-center">
+                <img src="/logo.png" alt="CarryGoExpress" className="w-full h-full object-cover" />
               </div>
               {sidebarOpen && (
                 <div>

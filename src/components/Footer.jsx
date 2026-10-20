@@ -75,8 +75,8 @@ export default function Footer() {
           {/* Brand Column */}
           <div className="space-y-6">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-veltrix-blue to-veltrix-blue-dark rounded-xl flex items-center justify-center shadow-glow">
-                <span className="text-veltrix-black font-extrabold text-2xl tracking-tighter">CG</span>
+              <div className="w-12 h-12 rounded-xl overflow-hidden shadow-glow border border-veltrix-blue/30 bg-black flex items-center justify-center">
+                <img src="/logo.png" alt="CarryGoExpress" className="w-full h-full object-cover" />
               </div>
               <div>
                 <h3 className="text-xl font-black tracking-tight text-white">CarryGo<span className="text-veltrix-blue">Express</span></h3>

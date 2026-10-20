@@ -151,16 +151,16 @@ export default function Hero() {
                   }}
                   className="w-full h-full object-cover object-center"
                 />
-                <div className="absolute inset-0 bg-gradient-to-r from-veltrix-black via-veltrix-black/85 to-veltrix-black/40" />
-                <div className="absolute inset-0 bg-gradient-to-t from-veltrix-black via-transparent to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-b from-veltrix-black/70 via-veltrix-black/60 to-veltrix-black" />
+                <div className="absolute inset-0 bg-veltrix-black/35 backdrop-blur-[1px]" />
               </div>
 
-              {/* Slide Content */}
-              <div className="relative h-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center pt-14 lg:pt-0 pb-20">
-                <div className={`max-w-2xl transition-all duration-1000 delay-200 ${
+              {/* Slide Content (Centered) */}
+              <div className="relative h-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-center pt-14 lg:pt-0 pb-20">
+                <div className={`max-w-3xl mx-auto flex flex-col items-center text-center transition-all duration-1000 delay-200 ${
                   isActive ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'
                 }`}>
-                  <div className="inline-flex items-center gap-2 px-3.5 py-1.5 lg:px-4 lg:py-2 bg-veltrix-blue/20 border border-veltrix-blue/35 rounded-full mb-3 lg:mb-5 backdrop-blur-md">
+                  <div className="inline-flex items-center justify-center gap-2 px-3.5 py-1.5 lg:px-4 lg:py-2 bg-veltrix-blue/20 border border-veltrix-blue/35 rounded-full mb-3 lg:mb-5 backdrop-blur-md">
                     <Zap className="w-3.5 h-3.5 lg:w-4 lg:h-4 text-veltrix-blue" />
                     <span className="text-xs lg:text-sm font-bold text-veltrix-blue">{slide.tag}</span>
                     {slide.isLiveProduct && (
@@ -173,14 +173,14 @@ export default function Hero() {
                   <h2 className="text-xs lg:text-sm font-bold text-veltrix-blue uppercase tracking-widest mb-2">
                     {slide.subtitle}
                   </h2>
-                  <h1 className="text-3xl sm:text-4xl lg:text-6xl font-black text-white mb-3 lg:mb-4 leading-tight tracking-tight drop-shadow-md">
+                  <h1 className="text-3xl sm:text-4xl lg:text-6xl font-black text-white mb-3 lg:mb-4 leading-tight tracking-tight drop-shadow-md max-w-2xl">
                     {slide.title}
                   </h1>
-                  <p className="text-sm sm:text-base lg:text-lg text-veltrix-gray-300 mb-6 lg:mb-8 leading-relaxed max-w-xl">
+                  <p className="text-sm sm:text-base lg:text-lg text-veltrix-gray-300 mb-6 lg:mb-8 leading-relaxed max-w-xl mx-auto">
                     {slide.description}
                   </p>
 
-                  <div className="flex flex-wrap items-center gap-4">
+                  <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4">
                     <Link
                       to={slide.link}
                       className="inline-flex items-center gap-2 lg:gap-3 px-6 py-3.5 lg:px-8 lg:py-4 bg-veltrix-blue text-veltrix-black text-sm lg:text-base font-black rounded-xl hover:shadow-glow-lg transition-all duration-300 hover:-translate-y-0.5"
@@ -191,7 +191,7 @@ export default function Hero() {
 
                     <Link
                       to="/products"
-                      className="inline-flex items-center gap-2 px-5 py-3.5 bg-white/10 hover:bg-white/15 border border-white/20 text-white text-sm font-semibold rounded-xl backdrop-blur-md transition-all duration-300"
+                      className="inline-flex items-center gap-2 px-5 py-3.5 bg-white/10 hover:bg-white/15 border border-white/20 text-white text-sm font-semibold rounded-xl backdrop-blur-md transition-all duration-300 hover:-translate-y-0.5"
                     >
                       <ShoppingBag className="w-4 h-4 text-veltrix-blue" />
                       <span>View All Products</span>
@@ -238,7 +238,7 @@ export default function Hero() {
 
       {/* ── Quick Categories Bar Attached Below Hero ────────────────────────── */}
       <div className="bg-veltrix-black border-y border-veltrix-gray-800/80 py-3.5 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-3 overflow-x-auto no-scrollbar">
+        <div className="max-w-7xl mx-auto flex items-center justify-start lg:justify-center gap-3 overflow-x-auto no-scrollbar">
           <div className="flex items-center gap-2 shrink-0 pr-2 border-r border-veltrix-gray-800 text-xs font-bold text-veltrix-gray-400 uppercase tracking-wider">
             <Layers className="w-4 h-4 text-veltrix-blue" />
             <span className="hidden sm:inline">Categories:</span>

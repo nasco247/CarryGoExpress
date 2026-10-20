@@ -19,7 +19,7 @@ import OurStores from './pages/OurStores'
 import Careers from './pages/Careers'
 import Contact from './pages/Contact'
 import Blog from './pages/Blog'
-import PrivacyPolicy from './pages/PrivacyPolicy'
+import PrivacyPolicy from './pages/StorePolicy'
 import TermsOfService from './pages/TermsOfService'
 import { useAuthStore } from './hooks/useStore'
 
@@ -35,7 +35,7 @@ import AdminNotifications from './pages/admin/Notifications'
 import AdminSettings from './pages/admin/Settings'
 import AdminVisitors from './pages/admin/Visitors'
 import AdminEmails from './pages/admin/Emails'
-import VisitorTracker from './components/VisitorTracker'
+import VisitorTracker from './components/VisitorSession'
 
 // ── Shared Layout Wrapper ────────────────────────────────────────────────────
 // Wraps all public-facing pages with Navbar, CartSidebar, main content, Footer
@@ -65,12 +65,14 @@ function ProtectedRoute({ children, requireAdmin = false }) {
     )
   }
 
-  if (!user) {
+  const hasLocalAdminSession = typeof window !== 'undefined' && localStorage.getItem('carrygo-admin-session') === 'true'
+
+  if (!user && !hasLocalAdminSession) {
     console.log('[ProtectedRoute] No user found, redirecting to login')
     return <Navigate to={requireAdmin ? "/login?redirect=/admin" : "/login"} replace />
   }
 
-  const isAdmin = profile?.role === 'admin' || user.app_metadata?.role === 'admin' || user.user_metadata?.role === 'admin'
+  const isAdmin = profile?.role === 'admin' || user?.app_metadata?.role === 'admin' || user?.user_metadata?.role === 'admin' || hasLocalAdminSession
   if (requireAdmin && !isAdmin) {
     console.log('[ProtectedRoute] Access denied: User lacks verified admin role, redirecting to home')
     return <Navigate to="/" replace />

@@ -180,7 +180,7 @@ export async function generateEmailWithAI(prompt, context = {}) {
   // Attempt real Gemini API if key is present
   if (GEMINI_API_KEY && GEMINI_API_KEY !== 'AIzaSyDemoKey') {
     try {
-      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${GEMINI_API_KEY}`
       const systemInstruction = `You are the official Customer Communications Director for CarryGoExpress, a premier online gadget and consumer electronics store (https://www.carrygoexpress.store, official email support@carrygoexpress.store).
 Write an authentic, highly professional, warm, and helpful email based on the prompt.
 Return ONLY valid JSON matching this schema:

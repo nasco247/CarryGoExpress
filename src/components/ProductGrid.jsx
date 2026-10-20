@@ -248,7 +248,7 @@ export default function ProductGrid({ filters = {}, hideSidebar = false, hideHea
                 ))}
               </div>
             </div>
-          ) : error ? (
+          ) : error && products.length === 0 ? (
             <div className="text-center py-16 bg-veltrix-black-light border border-red-500/20 rounded-2xl p-8">
               <div className="w-12 h-12 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-3">
                 <Filter className="w-6 h-6 text-red-400" />

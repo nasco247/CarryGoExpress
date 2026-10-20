@@ -7,16 +7,21 @@ export const useAuthStore = create((set, get) => ({
   user: null,
   profile: null,
   isLoading: true,
+  _initializing: false,
+  _initialized: false,
 
   initialize: async () => {
+    if (get()._initializing || get()._initialized) return
+    set({ _initializing: true })
     console.log('[Auth] Initializing auth store...')
-    // Safety fallback: never keep user waiting more than 2.5 seconds
+
+    // Safety fallback: allow ample time for mobile/wireless cold start
     const safetyTimer = setTimeout(() => {
       if (get().isLoading) {
-        console.warn('[Auth] Initialization safety timeout reached (2500ms)')
-        set({ isLoading: false })
+        console.warn('[Auth] Initialization safety timeout reached (7500ms)')
+        set({ isLoading: false, _initializing: false })
       }
-    }, 2500)
+    }, 7500)
 
     try {
       const user = await getCurrentUser()
@@ -33,9 +38,9 @@ export const useAuthStore = create((set, get) => ({
         if (error) {
           console.warn('[Auth] Profile fetch notice:', error.message)
         }
-        set({ user, profile: profile || null, isLoading: false })
+        set({ user, profile: profile || null, isLoading: false, _initialized: true, _initializing: false })
       } else {
-        set({ user: null, profile: null, isLoading: false })
+        set({ user: null, profile: null, isLoading: false, _initialized: true, _initializing: false })
       }
 
       // Listen for auth changes
@@ -58,7 +63,7 @@ export const useAuthStore = create((set, get) => ({
     } catch (err) {
       clearTimeout(safetyTimer)
       console.error('[Auth] Initialization error:', err)
-      set({ isLoading: false })
+      set({ isLoading: false, _initializing: false })
     }
   },
 

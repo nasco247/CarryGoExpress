@@ -104,7 +104,7 @@ export const signOut = async () => {
 
 export const getCurrentUser = async () => {
   try {
-    // 3.5-second timeout to prevent indefinite hangs
+    // 7-second timeout to accommodate slower mobile/wireless cold-starts
     const userPromise = supabase.auth.getUser().then(({ data, error }) => {
       if (error) {
         // "Auth session missing!" is standard for guest visitors who haven't signed in yet
@@ -118,7 +118,7 @@ export const getCurrentUser = async () => {
       }
       return data?.user || null
     })
-    const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(null), 3500))
+    const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(null), 7000))
     const user = await Promise.race([userPromise, timeoutPromise])
     return user
   } catch {
@@ -126,72 +126,165 @@ export const getCurrentUser = async () => {
   }
 }
 
+// ── Product Cache Helpers ───────────────────────────────────────────────────
+const PRODUCT_CACHE_KEY = 'carrygo_cached_products'
+
+export const getCachedProducts = () => {
+  if (typeof window === 'undefined') return []
+  try {
+    const raw = localStorage.getItem(PRODUCT_CACHE_KEY)
+    if (raw) {
+      const parsed = JSON.parse(raw)
+      return Array.isArray(parsed) ? parsed : []
+    }
+  } catch {}
+  return []
+}
+
+export const setCachedProducts = (products) => {
+  if (typeof window === 'undefined' || !Array.isArray(products) || products.length === 0) return
+  try {
+    localStorage.setItem(PRODUCT_CACHE_KEY, JSON.stringify(products))
+  } catch (e) {
+    // Quota limits or private browsing, fail silently
+  }
+}
+
 // ── Products API (Full Supabase CRUD) ────────────────────────────────────────
 export const getProducts = async (filters = {}) => {
-  let query = supabase
-    .from('products')
-    .select('*', { count: 'exact' })
+  const buildQuery = () => {
+    let query = supabase
+      .from('products')
+      .select('*', { count: 'exact' })
 
-  // Admin may want all products, otherwise default to active for customer
-  if (filters.status && filters.status !== 'all') {
-    query = query.eq('status', filters.status)
-  } else if (!filters.includeAllStatus) {
-    query = query.eq('status', 'active')
+    // Admin may want all products, otherwise default to active for customer
+    if (filters.status && filters.status !== 'all') {
+      query = query.eq('status', filters.status)
+    } else if (!filters.includeAllStatus) {
+      query = query.eq('status', 'active')
+    }
+
+    if (filters.brand && filters.brand.length > 0) {
+      query = query.in('brand', Array.isArray(filters.brand) ? filters.brand : [filters.brand])
+    }
+    if (filters.category && filters.category.length > 0) {
+      query = query.in('category', Array.isArray(filters.category) ? filters.category : [filters.category])
+    }
+    if (filters.subcategory && filters.subcategory.length > 0) {
+      query = query.in('subcategory', Array.isArray(filters.subcategory) ? filters.subcategory : [filters.subcategory])
+    }
+    if (filters.minPrice !== undefined) {
+      query = query.gte('price', filters.minPrice)
+    }
+    if (filters.maxPrice !== undefined) {
+      query = query.lte('price', filters.maxPrice)
+    }
+    if (filters.search) {
+      query = query.ilike('name', `%${filters.search}%`)
+    }
+
+    // Sorting
+    const sortField = filters.sortBy || 'name'
+    const sortOrder = filters.sortOrder || 'asc'
+    query = query.order(sortField, { ascending: sortOrder === 'asc' })
+
+    // Pagination
+    if (filters.limit) {
+      const page = filters.page || 1
+      const limit = filters.limit
+      const start = (page - 1) * limit
+      query = query.range(start, start + limit - 1)
+    }
+
+    return query
   }
 
-  if (filters.brand && filters.brand.length > 0) {
-    query = query.in('brand', Array.isArray(filters.brand) ? filters.brand : [filters.brand])
-  }
-  if (filters.category && filters.category.length > 0) {
-    query = query.in('category', Array.isArray(filters.category) ? filters.category : [filters.category])
-  }
-  if (filters.subcategory && filters.subcategory.length > 0) {
-    query = query.in('subcategory', Array.isArray(filters.subcategory) ? filters.subcategory : [filters.subcategory])
-  }
-  if (filters.minPrice !== undefined) {
-    query = query.gte('price', filters.minPrice)
-  }
-  if (filters.maxPrice !== undefined) {
-    query = query.lte('price', filters.maxPrice)
-  }
-  if (filters.search) {
-    query = query.ilike('name', `%${filters.search}%`)
-  }
-
-  // Sorting
-  const sortField = filters.sortBy || 'name'
-  const sortOrder = filters.sortOrder || 'asc'
-  query = query.order(sortField, { ascending: sortOrder === 'asc' })
-
-  // Pagination
-  if (filters.limit) {
-    const page = filters.page || 1
-    const limit = filters.limit
-    const start = (page - 1) * limit
-    query = query.range(start, start + limit - 1)
-  }
-
-  // 5-second timeout protection so UI never hangs indefinitely
-  try {
-    const queryPromise = query
+  // Attempt query with 12s timeout protection
+  const executeQuery = async () => {
+    const queryPromise = buildQuery()
     const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error('Product query timeout after 5s')), 5000)
+      setTimeout(() => reject(new Error('Product query timeout after 12s')), 12000)
     )
-    const { data, error, count } = await Promise.race([queryPromise, timeoutPromise])
-    return { data: data || [], error, count: count || (data ? data.length : 0) }
+    return await Promise.race([queryPromise, timeoutPromise])
+  }
+
+  try {
+    let result = await executeQuery()
+
+    // If a temporary network glitch occurred, retry once after 400ms
+    if (result.error) {
+      console.warn('[getProducts] Query issue on initial attempt, retrying once...', result.error.message)
+      await new Promise(r => setTimeout(r, 400))
+      result = await executeQuery()
+    }
+
+    if (result.data) {
+      // Cache products if this is an active catalog fetch
+      if (!filters.search && (!filters.brand || filters.brand.length === 0) && (!filters.category || filters.category.length === 0)) {
+        setCachedProducts(result.data)
+      }
+      return { 
+        data: result.data || [], 
+        error: result.error || null, 
+        count: result.count ?? (result.data ? result.data.length : 0) 
+      }
+    }
+
+    throw result.error || new Error('No product data returned')
   } catch (err) {
-    console.warn('[getProducts] Query timeout or network error:', err.message)
+    console.warn('[getProducts] Live query error/timeout, checking cache fallback:', err.message)
+
+    // Fall back to cached products so user never sees a broken empty store
+    const cached = getCachedProducts()
+    if (cached.length > 0) {
+      let filtered = cached
+      if (filters.status && filters.status !== 'all') {
+        filtered = filtered.filter(p => p.status === filters.status)
+      } else if (!filters.includeAllStatus) {
+        filtered = filtered.filter(p => !p.status || p.status === 'active')
+      }
+      if (filters.brand && filters.brand.length > 0) {
+        const brands = Array.isArray(filters.brand) ? filters.brand : [filters.brand]
+        filtered = filtered.filter(p => brands.includes(p.brand))
+      }
+      if (filters.category && filters.category.length > 0) {
+        const cats = Array.isArray(filters.category) ? filters.category : [filters.category]
+        filtered = filtered.filter(p => cats.includes(p.category))
+      }
+      if (filters.limit) {
+        filtered = filtered.slice(0, filters.limit)
+      }
+      return { data: filtered, error: null, count: filtered.length, fromCache: true }
+    }
+
     return { data: [], error: err, count: 0 }
   }
 }
 
 export const getProductById = async (id) => {
-  const { data, error } = await supabase
-    .from('products')
-    .select('*')
-    .eq('id', id)
-    .single()
-  return { data, error }
+  try {
+    const queryPromise = supabase
+      .from('products')
+      .select('*')
+      .eq('id', id)
+      .single()
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Product fetch timeout')), 10000)
+    )
+    const { data, error } = await Promise.race([queryPromise, timeoutPromise])
+    if (data) return { data, error: null }
+  } catch (err) {
+    console.warn('[getProductById] Live query failed or timed out:', err.message)
+  }
+
+  // Cache fallback for single product
+  const cached = getCachedProducts()
+  const found = cached.find(p => p.id === id)
+  if (found) {
+    return { data: found, error: null }
+  }
+
+  return { data: null, error: new Error('Product not found') }
 }
 
 export const createProduct = async (productData) => {
@@ -200,6 +293,11 @@ export const createProduct = async (productData) => {
     .insert([productData])
     .select()
     .single()
+
+  if (data && !error) {
+    const cached = getCachedProducts()
+    setCachedProducts([data, ...cached.filter(p => p.id !== data.id)])
+  }
   return { data, error }
 }
 
@@ -210,6 +308,11 @@ export const updateProduct = async (id, updates) => {
     .eq('id', id)
     .select()
     .single()
+
+  if (data && !error) {
+    const cached = getCachedProducts()
+    setCachedProducts(cached.map(p => p.id === id ? data : p))
+  }
   return { data, error }
 }
 
@@ -218,6 +321,11 @@ export const deleteProduct = async (id) => {
     .from('products')
     .delete()
     .eq('id', id)
+
+  if (!error) {
+    const cached = getCachedProducts()
+    setCachedProducts(cached.filter(p => p.id !== id))
+  }
   return { error }
 }
 

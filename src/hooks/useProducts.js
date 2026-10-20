@@ -1,32 +1,65 @@
 import { useState, useEffect } from 'react'
-import { supabase, getProducts, getProductById } from '../lib/supabase'
+import { supabase, getProducts, getProductById, getCachedProducts } from '../lib/supabase'
 
 // Hook for fetching products directly from Supabase with realtime synchronization
 export function useProducts(filters = {}) {
-  const [products, setProducts] = useState([])
-  const [loading, setLoading] = useState(true)
+  // Pre-seed state from local cache so user gets instantaneous 0ms display on arrival/refresh
+  const [products, setProducts] = useState(() => {
+    const cached = getCachedProducts()
+    if (!filters.search && (!filters.brand || filters.brand.length === 0) && (!filters.category || filters.category.length === 0)) {
+      return cached.length > 0 ? cached : []
+    }
+    return []
+  })
+  const [loading, setLoading] = useState(() => {
+    const cached = getCachedProducts()
+    return cached.length === 0
+  })
   const [error, setError] = useState(null)
-  const [totalCount, setTotalCount] = useState(0)
+  const [totalCount, setTotalCount] = useState(() => {
+    const cached = getCachedProducts()
+    return cached.length
+  })
 
-  const fetchProducts = async () => {
+  const fetchProducts = async (isRetry = false) => {
     try {
-      setLoading(true)
+      setProducts(prev => {
+        if (!prev || prev.length === 0) setLoading(true)
+        return prev
+      })
+
       const { data, error: sbError, count } = await getProducts(filters)
 
       if (sbError) {
-        console.warn('[useProducts] Supabase error:', sbError.message)
-        setError(sbError.message)
-        setProducts([])
-        setTotalCount(0)
+        console.warn('[useProducts] Supabase notice:', sbError.message)
+        // If we already have products displayed (e.g. from cache or previous state), keep them!
+        setProducts(current => {
+          if (!current || current.length === 0) {
+            setError(sbError.message)
+            setTotalCount(0)
+            return []
+          }
+          return current
+        })
+
+        // Auto-retry once quietly after 2 seconds
+        if (!isRetry) {
+          setTimeout(() => fetchProducts(true), 2000)
+        }
       } else {
         setProducts(data || [])
-        setTotalCount(count || 0)
+        setTotalCount(count || (data ? data.length : 0))
         setError(null)
       }
     } catch (err) {
-      console.error('[useProducts] Unexpected error:', err)
-      setError(err.message)
-      setProducts([])
+      console.warn('[useProducts] Unexpected error:', err.message)
+      setProducts(current => {
+        if (!current || current.length === 0) {
+          setError(err.message)
+          return []
+        }
+        return current
+      })
     } finally {
       setLoading(false)
     }
@@ -59,29 +92,41 @@ export function useProducts(filters = {}) {
 
 // Hook for single product directly from Supabase
 export function useProduct(id) {
-  const [product, setProduct] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [product, setProduct] = useState(() => {
+    if (!id) return null
+    const cached = getCachedProducts()
+    return cached.find(p => p.id === id) || null
+  })
+  const [loading, setLoading] = useState(() => {
+    if (!id) return false
+    const cached = getCachedProducts()
+    return !cached.some(p => p.id === id)
+  })
   const [error, setError] = useState(null)
 
   useEffect(() => {
     const fetchProduct = async () => {
       if (!id) return
       try {
-        setLoading(true)
+        if (!product) setLoading(true)
         const { data, error: sbError } = await getProductById(id)
 
         if (sbError) {
-          console.warn('[useProduct] Supabase fetch error:', sbError.message)
-          setError(sbError.message)
-          setProduct(null)
+          console.warn('[useProduct] Supabase fetch notice:', sbError.message)
+          if (!product) {
+            setError(sbError.message)
+            setProduct(null)
+          }
         } else {
           setProduct(data)
           setError(null)
         }
       } catch (err) {
         console.error('[useProduct] Unexpected error:', err)
-        setError(err.message)
-        setProduct(null)
+        if (!product) {
+          setError(err.message)
+          setProduct(null)
+        }
       } finally {
         setLoading(false)
       }

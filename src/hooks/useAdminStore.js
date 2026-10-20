@@ -137,11 +137,20 @@ export const useAdminStore = create((set, get) => ({
         getSiteVisits({ limit: 200 })
       ])
 
-      const loadedProducts = productsRes.data || []
-      const loadedOrders = ordersRes.data || []
-      const loadedUsers = profilesRes.data || []
-      const loadedDeposits = transRes.data || []
-      const loadedVisits = visitsRes.data || []
+      const dedupeById = (arr) => {
+        const seen = new Set()
+        return (arr || []).filter(item => {
+          if (!item || !item.id || seen.has(item.id)) return false
+          seen.add(item.id)
+          return true
+        })
+      }
+
+      const loadedProducts = dedupeById(productsRes.data)
+      const loadedOrders = dedupeById(ordersRes.data)
+      const loadedUsers = dedupeById(profilesRes.data)
+      const loadedDeposits = dedupeById(transRes.data)
+      const loadedVisits = dedupeById(visitsRes.data)
 
       const calculatedStats = get().calculateStats(
         loadedProducts,
@@ -187,7 +196,7 @@ export const useAdminStore = create((set, get) => ({
           let newOrders = [...state.orders]
 
           if (payload.eventType === 'INSERT') {
-            newOrders = [payload.new, ...newOrders]
+            newOrders = [payload.new, ...newOrders.filter(o => o.id !== payload.new.id)]
             state.addEvent({
               id: payload.new.id || Date.now().toString(),
               type: 'order',
@@ -222,7 +231,7 @@ export const useAdminStore = create((set, get) => ({
           let newProducts = [...state.products]
 
           if (payload.eventType === 'INSERT') {
-            newProducts = [payload.new, ...newProducts]
+            newProducts = [payload.new, ...newProducts.filter(p => p.id !== payload.new.id)]
             state.addEvent({
               id: payload.new.id || Date.now().toString(),
               type: 'product',
@@ -257,7 +266,7 @@ export const useAdminStore = create((set, get) => ({
           let newUsers = [...state.users]
 
           if (payload.eventType === 'INSERT') {
-            newUsers = [payload.new, ...newUsers]
+            newUsers = [payload.new, ...newUsers.filter(u => u.id !== payload.new.id)]
             state.addEvent({
               id: payload.new.id || Date.now().toString(),
               type: 'user',
@@ -283,7 +292,7 @@ export const useAdminStore = create((set, get) => ({
           let newDeposits = [...state.deposits]
 
           if (payload.eventType === 'INSERT') {
-            newDeposits = [payload.new, ...newDeposits]
+            newDeposits = [payload.new, ...newDeposits.filter(d => d.id !== payload.new.id)]
             state.addEvent({
               id: payload.new.id || Date.now().toString(),
               type: 'deposit',
@@ -309,7 +318,7 @@ export const useAdminStore = create((set, get) => ({
           let newVisits = [...state.visits]
 
           if (payload.eventType === 'INSERT') {
-            newVisits = [payload.new, ...newVisits].slice(0, 300)
+            newVisits = [payload.new, ...newVisits.filter(v => v.id !== payload.new.id)].slice(0, 300)
             state.addEvent({
               id: payload.new.id || Date.now().toString(),
               type: 'visit',

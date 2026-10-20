@@ -1175,8 +1175,8 @@ export default function AdminProducts() {
                           </div>
 
                           {/* Provider & Model Selectors */}
-                          <div className="flex flex-wrap items-center gap-1.5 shrink-0">
-                            <div className="flex items-center p-0.5 bg-veltrix-black/80 border border-purple-500/30 rounded-xl">
+                          <div className="flex items-center gap-1.5 flex-wrap sm:flex-nowrap shrink-0 max-w-full">
+                            <div className="flex items-center p-0.5 bg-veltrix-black/80 border border-purple-500/30 rounded-xl shrink-0">
                               <button
                                 type="button"
                                 onClick={() => handleProviderChange('gemini')}
@@ -1201,12 +1201,13 @@ export default function AdminProducts() {
                               </button>
                             </div>
 
-                            <div className="relative">
+                            <div className="relative min-w-0 max-w-[135px] sm:max-w-[175px]">
                               {aiProvider === 'deepseek' ? (
                                 <select
                                   value={selectedDeepseekModel}
                                   onChange={(e) => handleDeepseekModelChange(e.target.value)}
-                                  className="bg-veltrix-black/80 border border-blue-500/40 text-blue-200 text-xs rounded-xl px-2.5 py-1 pr-6 appearance-none focus:outline-none cursor-pointer"
+                                  className="w-full truncate bg-veltrix-black/80 border border-blue-500/40 text-blue-200 text-xs rounded-xl pl-2.5 pr-6 py-1 appearance-none focus:outline-none cursor-pointer"
+                                  title={selectedDeepseekModel}
                                 >
                                   {DEEPSEEK_MODELS.map(m => (
                                     <option key={m.id} value={m.id} className="bg-veltrix-black text-white">
@@ -1218,7 +1219,8 @@ export default function AdminProducts() {
                                 <select
                                   value={selectedGeminiModel}
                                   onChange={(e) => handleGeminiModelChange(e.target.value)}
-                                  className="bg-veltrix-black/80 border border-purple-500/40 text-purple-200 text-xs rounded-xl px-2.5 py-1 pr-6 appearance-none focus:outline-none cursor-pointer"
+                                  className="w-full truncate bg-veltrix-black/80 border border-purple-500/40 text-purple-200 text-xs rounded-xl pl-2.5 pr-6 py-1 appearance-none focus:outline-none cursor-pointer"
+                                  title={selectedGeminiModel}
                                 >
                                   {availableGeminiModels.map(m => (
                                     <option key={m.id} value={m.id} className="bg-veltrix-black text-white">
@@ -1236,7 +1238,7 @@ export default function AdminProducts() {
                                 setActiveSetupTab(aiProvider)
                                 setGeminiKeyModalOpen(true)
                               }}
-                              className="p-1.5 bg-veltrix-black/60 border border-veltrix-gray-700 text-veltrix-gray-300 hover:text-white rounded-xl text-xs flex items-center gap-1 hover:border-purple-500/50"
+                              className="p-1.5 bg-veltrix-black/60 border border-veltrix-gray-700 text-veltrix-gray-300 hover:text-white rounded-xl text-xs flex items-center gap-1 hover:border-purple-500/50 shrink-0"
                               title="API Key Configuration"
                             >
                               <Key className="w-3.5 h-3.5 text-yellow-400" />

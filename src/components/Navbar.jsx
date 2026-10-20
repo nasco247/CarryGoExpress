@@ -124,17 +124,6 @@ export default function Navbar() {
 
           {/* Right Actions */}
           <div className="flex items-center gap-3">
-            {/* Admin shortcut if admin */}
-            {isAdmin && (
-              <Link
-                to="/admin"
-                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-purple-500/20 text-purple-300 border border-purple-500/30 rounded-lg text-xs font-semibold hover:bg-purple-500/30 transition-all"
-                title="Admin Dashboard"
-              >
-                <Shield className="w-3.5 h-3.5" />
-                <span>Admin</span>
-              </Link>
-            )}
 
             {/* Cart */}
             <button
@@ -217,12 +206,6 @@ export default function Navbar() {
                   <User className="w-3.5 h-3.5" />
                   Sign In
                 </Link>
-                <Link
-                  to="/admin"
-                  className="hidden sm:flex items-center gap-1 px-3 py-2 text-xs font-medium text-veltrix-gray-400 hover:text-white transition-colors"
-                >
-                  Admin
-                </Link>
               </div>
             )}
 
@@ -265,14 +248,6 @@ export default function Navbar() {
                 {link.name}
               </Link>
             ))}
-
-            <Link
-              to="/admin"
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="block py-2 text-sm font-semibold text-purple-400"
-            >
-              Admin Dashboard
-            </Link>
 
             {!user ? (
               <Link

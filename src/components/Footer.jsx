@@ -205,9 +205,6 @@ export default function Footer() {
             <Link to="/terms" className="text-sm text-veltrix-gray-500 hover:text-veltrix-blue transition-colors">
               Terms of Service
             </Link>
-            <Link to="/admin" className="text-sm text-veltrix-gray-500 hover:text-veltrix-blue transition-colors">
-              Admin Portal
-            </Link>
           </div>
         </div>
       </div>

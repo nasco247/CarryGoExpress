@@ -14,6 +14,18 @@ import {
   getSiteVisits
 } from '../lib/supabase'
 
+const loadInitialNotifications = () => {
+  if (typeof window === 'undefined') return []
+  try {
+    const raw = localStorage.getItem('carrygo_admin_notifications')
+    if (raw) {
+      const parsed = JSON.parse(raw)
+      if (Array.isArray(parsed)) return parsed
+    }
+  } catch {}
+  return []
+}
+
 export const useAdminStore = create((set, get) => ({
   sidebarOpen: true,
   activeTab: 'dashboard',
@@ -46,7 +58,7 @@ export const useAdminStore = create((set, get) => ({
   users: [],
   deposits: [],
   restrictions: [],
-  notifications: [],
+  notifications: loadInitialNotifications(),
   liveEvents: [],
   visits: [],
   inboundEmails: [],
@@ -343,22 +355,70 @@ export const useAdminStore = create((set, get) => ({
     }
   },
 
-  // ── Live Activity Event Logging ────────────────────────────────────────────
+  // ── Live Activity Event Logging & Notifications ───────────────────────────
   addEvent: (event) => {
-    set((state) => ({
-      liveEvents: [event, ...state.liveEvents].slice(0, 30),
-      notifications: [
-        {
-          id: Date.now(),
-          title: event.title,
-          message: event.message,
-          type: event.type,
-          time: 'Just now',
-          read: false
-        },
-        ...state.notifications
-      ].slice(0, 50)
-    }))
+    set((state) => {
+      const newNotification = {
+        id: event.id || `notif_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+        title: event.title,
+        message: event.message,
+        type: event.type,
+        time: 'Just now',
+        read: false
+      }
+      const updatedNotifications = [newNotification, ...state.notifications].slice(0, 50)
+      try {
+        localStorage.setItem('carrygo_admin_notifications', JSON.stringify(updatedNotifications))
+      } catch {}
+
+      return {
+        liveEvents: [event, ...state.liveEvents].slice(0, 30),
+        notifications: updatedNotifications
+      }
+    })
+  },
+
+  markNotificationRead: (id) => {
+    set((state) => {
+      const updated = state.notifications.map((n) =>
+        n.id === id ? { ...n, read: true } : n
+      )
+      try {
+        localStorage.setItem('carrygo_admin_notifications', JSON.stringify(updated))
+      } catch {}
+      return { notifications: updated }
+    })
+  },
+
+  markAllNotificationsRead: (type) => {
+    set((state) => {
+      const updated = state.notifications.map((n) =>
+        !type || n.type === type ? { ...n, read: true } : n
+      )
+      try {
+        localStorage.setItem('carrygo_admin_notifications', JSON.stringify(updated))
+      } catch {}
+      return { notifications: updated }
+    })
+  },
+
+  deleteNotification: (id) => {
+    set((state) => {
+      const updated = state.notifications.filter((n) => n.id !== id)
+      try {
+        localStorage.setItem('carrygo_admin_notifications', JSON.stringify(updated))
+      } catch {}
+      return { notifications: updated }
+    })
+  },
+
+  clearAllNotifications: () => {
+    set(() => {
+      try {
+        localStorage.removeItem('carrygo_admin_notifications')
+      } catch {}
+      return { notifications: [] }
+    })
   },
 
   // ── Product CRUD Actions ───────────────────────────────────────────────────

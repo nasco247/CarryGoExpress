@@ -10,6 +10,7 @@ export default function AdminNotifications() {
     markNotificationRead, 
     markAllNotificationsRead, 
     deleteNotification,
+    clearAllNotifications,
     realtimeConnected 
   } = useAdminStore()
 
@@ -37,14 +38,25 @@ export default function AdminNotifications() {
             Realtime notifications broadcasted whenever events occur on the user and product fronts.
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <button 
-            onClick={markAllAllNotificationsRead => markAllNotificationsRead()}
-            className="flex items-center gap-2 px-4 py-2 bg-veltrix-black-light border border-veltrix-gray-800 rounded-xl text-xs font-semibold text-veltrix-gray-300 hover:text-white transition-all"
+            onClick={() => markAllNotificationsRead()}
+            className="flex items-center gap-2 px-3.5 py-2 bg-veltrix-blue text-veltrix-black rounded-xl text-xs font-bold hover:bg-veltrix-blue/90 transition-all shadow-glow"
+            title="Mark all notifications as read"
           >
             <CheckCircle className="w-3.5 h-3.5" />
             Mark All Read
           </button>
+          {notifications.length > 0 && (
+            <button 
+              onClick={() => clearAllNotifications()}
+              className="flex items-center gap-1.5 px-3 py-2 bg-veltrix-black-light border border-veltrix-gray-800 rounded-xl text-xs font-semibold text-veltrix-gray-400 hover:text-red-400 hover:border-red-500/30 transition-all"
+              title="Clear all alerts"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              Clear All
+            </button>
+          )}
         </div>
       </div>
 

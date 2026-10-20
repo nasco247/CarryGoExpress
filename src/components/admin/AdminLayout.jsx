@@ -43,6 +43,7 @@ export default function AdminLayout() {
     realtimeConnected,
     fetchDashboardData,
     initRealtimeSubscription,
+    markAllNotificationsRead,
     isLoading
   } = useAdminStore()
 
@@ -72,15 +73,16 @@ export default function AdminLayout() {
   }
 
   const getBadgeCount = (badge) => {
+    const unread = (notifications || []).filter(n => !n.read)
     switch(badge) {
-      case 'users': return stats.totalUsers || 0
-      case 'orders': return stats.pendingOrders || 0
-      case 'products': return stats.lowStock || 0
-      case 'deposits': return stats.pendingDeposits || 0
-      case 'restrictions': return stats.activeRestrictions || 0
-      case 'visitors': return stats.activeVisitorsNow || 0
-      case 'notifications': return notifications.filter(n => !n.read).length
+      case 'notifications': return unread.length
       case 'emails': return (inboundEmails || []).filter(e => !e.read).length
+      case 'orders': return unread.filter(n => n.type === 'order').length
+      case 'products': return unread.filter(n => n.type === 'product').length
+      case 'users': return unread.filter(n => n.type === 'user').length
+      case 'deposits': return unread.filter(n => n.type === 'deposit').length
+      case 'visitors': return unread.filter(n => n.type === 'visit').length
+      case 'restrictions': return unread.filter(n => n.type === 'restriction').length
       default: return 0
     }
   }
@@ -168,6 +170,19 @@ export default function AdminLayout() {
                   onClick={() => {
                     if (typeof window !== 'undefined' && window.innerWidth < 1024) {
                       setSidebarOpen(false)
+                    }
+                    if (item.badge && item.badge !== 'notifications' && typeof markAllNotificationsRead === 'function') {
+                      const typeMap = {
+                        orders: 'order',
+                        products: 'product',
+                        users: 'user',
+                        deposits: 'deposit',
+                        visitors: 'visit',
+                        restrictions: 'restriction'
+                      }
+                      if (typeMap[item.badge]) {
+                        markAllNotificationsRead(typeMap[item.badge])
+                      }
                     }
                   }}
                   className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200 group relative ${
@@ -363,6 +378,7 @@ export default function AdminLayout() {
             {/* 2. Live Orders */}
             <Link 
               to="/admin/orders" 
+              onClick={() => { if (typeof markAllNotificationsRead === 'function') markAllNotificationsRead('order') }}
               className={`flex flex-col items-center justify-center py-1 px-1 rounded-xl relative transition-all duration-150 active:scale-95 touch-manipulation ${
                 location.pathname === '/admin/orders' 
                   ? 'text-veltrix-blue bg-veltrix-blue/15 border border-veltrix-blue/40 font-bold shadow-glow' 
@@ -371,7 +387,7 @@ export default function AdminLayout() {
             >
               <div className="relative flex items-center justify-center">
                 <ShoppingCart className="w-5 h-5 shrink-0" />
-                {stats.pendingOrders > 0 && (
+                {getBadgeCount('orders') > 0 && (
                   <span className="absolute -top-1 -right-1.5 w-2 h-2 rounded-full bg-veltrix-blue ring-2 ring-veltrix-black animate-pulse" />
                 )}
               </div>
@@ -383,6 +399,7 @@ export default function AdminLayout() {
             {/* 3. Live Catalog */}
             <Link 
               to="/admin/products" 
+              onClick={() => { if (typeof markAllNotificationsRead === 'function') markAllNotificationsRead('product') }}
               className={`flex flex-col items-center justify-center py-1 px-1 rounded-xl relative transition-all duration-150 active:scale-95 touch-manipulation ${
                 location.pathname === '/admin/products' 
                   ? 'text-veltrix-blue bg-veltrix-blue/15 border border-veltrix-blue/40 font-bold shadow-glow' 
@@ -391,7 +408,7 @@ export default function AdminLayout() {
             >
               <div className="relative flex items-center justify-center">
                 <Package className="w-5 h-5 shrink-0" />
-                {stats.lowStock > 0 && (
+                {getBadgeCount('products') > 0 && (
                   <span className="absolute -top-1 -right-1.5 w-2 h-2 rounded-full bg-yellow-400 ring-2 ring-veltrix-black" />
                 )}
               </div>
@@ -403,6 +420,7 @@ export default function AdminLayout() {
             {/* 4. Live Visitors */}
             <Link 
               to="/admin/visitors" 
+              onClick={() => { if (typeof markAllNotificationsRead === 'function') markAllNotificationsRead('visit') }}
               className={`flex flex-col items-center justify-center py-1 px-1 rounded-xl relative transition-all duration-150 active:scale-95 touch-manipulation ${
                 location.pathname === '/admin/visitors' 
                   ? 'text-veltrix-blue bg-veltrix-blue/15 border border-veltrix-blue/40 font-bold shadow-glow' 
@@ -411,7 +429,7 @@ export default function AdminLayout() {
             >
               <div className="relative flex items-center justify-center">
                 <Globe className="w-5 h-5 shrink-0" />
-                {stats.activeVisitorsNow > 0 && (
+                {getBadgeCount('visitors') > 0 && (
                   <span className="absolute -top-1 -right-1.5 w-2 h-2 rounded-full bg-green-400 ring-2 ring-veltrix-black animate-ping" />
                 )}
               </div>

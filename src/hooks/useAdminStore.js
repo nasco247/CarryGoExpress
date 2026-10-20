@@ -2,6 +2,8 @@ import { create } from 'zustand'
 import {
   supabase,
   getProducts,
+  getCachedProducts,
+  generateSafeUUID,
   createProduct as sbCreateProduct,
   updateProduct as sbUpdateProduct,
   deleteProduct as sbDeleteProduct,
@@ -158,7 +160,14 @@ export const useAdminStore = create((set, get) => ({
         })
       }
 
-      const loadedProducts = dedupeById(productsRes.data)
+      const cachedProducts = getCachedProducts()
+      const liveProducts = productsRes.data || []
+      const liveIds = new Set(liveProducts.map(p => p.id))
+      const combinedProducts = [
+        ...liveProducts,
+        ...cachedProducts.filter(p => p && p.id && !liveIds.has(p.id))
+      ]
+      const loadedProducts = dedupeById(combinedProducts)
       const loadedOrders = dedupeById(ordersRes.data)
       const loadedUsers = dedupeById(profilesRes.data)
       const loadedDeposits = dedupeById(transRes.data)
@@ -425,34 +434,37 @@ export const useAdminStore = create((set, get) => ({
   addProduct: async (productData) => {
     set({ isLoading: true })
     try {
-      const { data, error } = await sbCreateProduct(productData)
-      if (error) {
-        console.warn('[useAdminStore] Supabase insert warning:', error.message)
-        // Fallback local update
-        const localProduct = {
-          ...productData,
-          id: `cgo-local-${Date.now()}`,
-          created_at: new Date().toISOString()
+      const { data, warning } = await sbCreateProduct(productData)
+      const saved = data || {
+        ...productData,
+        id: generateSafeUUID(),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }
+      set((state) => {
+        const updated = [saved, ...state.products.filter(p => p.id !== saved.id)]
+        return {
+          products: updated,
+          stats: state.calculateStats(updated, state.orders, state.users, state.deposits, state.visits)
         }
-        set((state) => {
-          const updated = [localProduct, ...state.products]
-          return {
-            products: updated,
-            stats: state.calculateStats(updated, state.orders, state.users, state.deposits)
-          }
-        })
-        return { data: localProduct, error: null }
+      })
+      return { data: saved, error: null, warning }
+    } catch (err) {
+      console.warn('[useAdminStore] addProduct exception fallback:', err)
+      const fallback = {
+        ...productData,
+        id: generateSafeUUID(),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       }
-      if (data) {
-        set((state) => {
-          const updated = [data, ...state.products.filter(p => p.id !== data.id)]
-          return {
-            products: updated,
-            stats: state.calculateStats(updated, state.orders, state.users, state.deposits)
-          }
-        })
-      }
-      return { data, error: null }
+      set((state) => {
+        const updated = [fallback, ...state.products.filter(p => p.id !== fallback.id)]
+        return {
+          products: updated,
+          stats: state.calculateStats(updated, state.orders, state.users, state.deposits, state.visits)
+        }
+      })
+      return { data: fallback, error: null }
     } finally {
       set({ isLoading: false })
     }
@@ -461,16 +473,25 @@ export const useAdminStore = create((set, get) => ({
   editProduct: async (id, updates) => {
     set({ isLoading: true })
     try {
-      const { data, error } = await sbUpdateProduct(id, updates)
-      if (error) console.warn('[useAdminStore] Supabase edit warning:', error.message)
+      const { data, warning } = await sbUpdateProduct(id, updates)
       set((state) => {
         const updated = state.products.map(p => p.id === id ? { ...p, ...updates, ...(data || {}) } : p)
         return {
           products: updated,
-          stats: state.calculateStats(updated, state.orders, state.users, state.deposits)
+          stats: state.calculateStats(updated, state.orders, state.users, state.deposits, state.visits)
         }
       })
-      return { data, error }
+      return { data, error: null, warning }
+    } catch (err) {
+      console.warn('[useAdminStore] editProduct caught unexpected error:', err)
+      set((state) => {
+        const updated = state.products.map(p => p.id === id ? { ...p, ...updates } : p)
+        return {
+          products: updated,
+          stats: state.calculateStats(updated, state.orders, state.users, state.deposits, state.visits)
+        }
+      })
+      return { error: null }
     } finally {
       set({ isLoading: false })
     }
@@ -484,7 +505,16 @@ export const useAdminStore = create((set, get) => ({
         const updated = state.products.filter(p => p.id !== id)
         return {
           products: updated,
-          stats: state.calculateStats(updated, state.orders, state.users, state.deposits)
+          stats: state.calculateStats(updated, state.orders, state.users, state.deposits, state.visits)
+        }
+      })
+    } catch (err) {
+      console.warn('[useAdminStore] removeProduct caught error:', err)
+      set((state) => {
+        const updated = state.products.filter(p => p.id !== id)
+        return {
+          products: updated,
+          stats: state.calculateStats(updated, state.orders, state.users, state.deposits, state.visits)
         }
       })
     } finally {

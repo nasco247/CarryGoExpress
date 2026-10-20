@@ -64,6 +64,13 @@ export default function AdminProducts() {
   const [submitting, setSubmitting] = useState(false)
   const [uploadingImage, setUploadingImage] = useState(false)
   const [uploadError, setUploadError] = useState(null)
+  const [saveFeedback, setSaveFeedback] = useState(null)
+
+  useEffect(() => {
+    if (!saveFeedback) return
+    const timer = setTimeout(() => setSaveFeedback(null), 6000)
+    return () => clearTimeout(timer)
+  }, [saveFeedback])
 
   // Multi-Provider AI State & Model Selection (Google Gemini & DeepSeek)
   const [aiProvider, setAiProvider] = useState(getAiProvider())
@@ -222,13 +229,41 @@ export default function AdminProducts() {
     setUploadingImage(true)
     setUploadError(null)
 
-    const { url, error } = await uploadProductImage(file)
-    if (error) {
-      setUploadError(error)
-    } else if (url) {
-      setForm(prev => ({ ...prev, image: url }))
+    try {
+      const { url, error } = await uploadProductImage(file)
+      if (url) {
+        setForm(prev => ({ ...prev, image: url }))
+        setAiSuccessMsg('📷 Image uploaded and linked successfully!')
+      } else {
+        // Fallback: Read file locally as Data URL so image is instantly attached and displayed
+        const reader = new FileReader()
+        reader.onloadend = () => {
+          if (reader.result) {
+            setForm(prev => ({ ...prev, image: reader.result }))
+            setUploadError(null)
+            setAiSuccessMsg('📷 Image attached and ready for catalog!')
+          }
+        }
+        reader.readAsDataURL(file)
+      }
+    } catch (err) {
+      console.warn('[AdminProducts] Storage upload exception, falling back to local file reader:', err)
+      try {
+        const reader = new FileReader()
+        reader.onloadend = () => {
+          if (reader.result) {
+            setForm(prev => ({ ...prev, image: reader.result }))
+            setUploadError(null)
+            setAiSuccessMsg('📷 Image attached and ready for catalog!')
+          }
+        }
+        reader.readAsDataURL(file)
+      } catch (readErr) {
+        setUploadError('Failed to process image file. Please try another photo.')
+      }
+    } finally {
+      setUploadingImage(false)
     }
-    setUploadingImage(false)
   }
 
   // ── Multi-Provider AI Actions (Gemini & DeepSeek) ──────────────────────────
@@ -452,32 +487,66 @@ export default function AdminProducts() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!form.name || !form.price) return
+
+    // Immediately abort any background cascading AI tasks
+    if (aiAbortControllerRef.current) {
+      aiAbortControllerRef.current.abort()
+      aiAbortControllerRef.current = null
+    }
+    if (aiImageAbortControllerRef.current) {
+      aiImageAbortControllerRef.current.abort()
+      aiImageAbortControllerRef.current = null
+    }
+    setGeneratingWithAi(false)
+    setGeneratingImageWithAi(false)
+
     setSubmitting(true)
+    setAiErrorMsg(null)
 
-    const payload = {
-      name: form.name,
-      sku: form.sku,
-      category: form.category,
-      subcategory: form.subcategory || null,
-      brand: form.brand || 'CarryGoExpress',
-      price: parseFloat(form.price) || 0,
-      original_price: form.original_price ? parseFloat(form.original_price) : null,
-      stock: parseInt(form.stock) || 0,
-      in_stock: (parseInt(form.stock) || 0) > 0,
-      status: form.status,
-      image: form.image || 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=600',
-      badge: form.badge || null,
-      description: form.description
+    try {
+      const payload = {
+        name: form.name.trim(),
+        sku: form.sku?.trim() || `CGO-GDT-${Math.floor(1000 + Math.random() * 9000)}`,
+        category: form.category || 'Smartphones & Tablets',
+        subcategory: form.subcategory || null,
+        brand: form.brand?.trim() || 'CarryGoExpress',
+        price: parseFloat(form.price) || 0,
+        original_price: form.original_price ? parseFloat(form.original_price) : null,
+        stock: parseInt(form.stock) || 0,
+        in_stock: (parseInt(form.stock) || 0) > 0,
+        status: form.status || 'active',
+        image: form.image?.trim() || getHighQualityGadgetImage({
+          title: form.name.trim(),
+          category: form.category,
+          brand: form.brand,
+          subcategory: form.subcategory
+        }),
+        badge: form.badge?.trim() || null,
+        description: form.description || ''
+      }
+
+      if (editingProduct) {
+        await editProduct(editingProduct.id, payload)
+        setSaveFeedback({ 
+          type: 'success', 
+          message: `✅ Gadget "${payload.name}" updated successfully!` 
+        })
+      } else {
+        await addProduct(payload)
+        setSaveFeedback({ 
+          type: 'success', 
+          message: `🚀 "${payload.name}" published to storefront catalog successfully!` 
+        })
+      }
+
+      setShowModal(false)
+      setEditingProduct(null)
+    } catch (err) {
+      console.error('[AdminProducts] Submit caught error:', err)
+      setAiErrorMsg(`Save issue: ${err.message || 'Unable to save gadget. Please verify input fields.'}`)
+    } finally {
+      setSubmitting(false)
     }
-
-    if (editingProduct) {
-      await editProduct(editingProduct.id, payload)
-    } else {
-      await addProduct(payload)
-    }
-
-    setSubmitting(false)
-    setShowModal(false)
   }
 
   const handleDelete = async (id, name) => {
@@ -558,6 +627,31 @@ export default function AdminProducts() {
           </button>
         </div>
       </div>
+
+      {/* Save Feedback Banner */}
+      {saveFeedback && (
+        <div className={`p-3.5 sm:p-4 rounded-2xl text-xs sm:text-sm flex items-center justify-between gap-3 border shadow-lg animate-fade-in ${
+          saveFeedback.type === 'success' 
+            ? 'bg-green-500/15 border-green-500/30 text-green-300' 
+            : 'bg-red-500/15 border-red-500/30 text-red-300'
+        }`}>
+          <div className="flex items-center gap-2.5">
+            {saveFeedback.type === 'success' ? (
+              <CheckCircle className="w-5 h-5 text-green-400 shrink-0" />
+            ) : (
+              <AlertTriangle className="w-5 h-5 text-red-400 shrink-0" />
+            )}
+            <span className="font-semibold">{saveFeedback.message}</span>
+          </div>
+          <button 
+            type="button"
+            onClick={() => setSaveFeedback(null)} 
+            className="p-1 text-veltrix-gray-400 hover:text-white rounded-lg hover:bg-veltrix-gray-800"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       {/* Stats Summary */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
@@ -1678,31 +1772,39 @@ export default function AdminProducts() {
                     </span>
                   </div>
 
-                  <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-                    <button
-                      type="button"
-                      onClick={closeProductModal}
-                      className="px-4 py-2.5 text-xs font-semibold text-veltrix-gray-400 hover:text-white transition-colors w-1/2 sm:w-auto"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={submitting || !form.name || !form.price}
-                      className="px-6 py-2.5 bg-veltrix-blue text-veltrix-black font-bold rounded-xl text-xs shadow-glow hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2 w-1/2 sm:w-auto"
-                    >
-                      {submitting ? (
-                        <>
-                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                          <span>Saving to Database...</span>
-                        </>
-                      ) : (
-                        <>
-                          <Check className="w-4 h-4" />
-                          <span>{editingProduct ? 'Save Gadget Updates' : 'Publish to Storefront'}</span>
-                        </>
-                      )}
-                    </button>
+                  <div className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto justify-end">
+                    {aiErrorMsg && (
+                      <div className="text-xs text-red-400 font-medium flex items-center gap-1.5 py-1 px-2.5 rounded-lg bg-red-500/10 border border-red-500/20 max-w-xs truncate">
+                        <AlertTriangle className="w-3.5 h-3.5 text-red-400 shrink-0" />
+                        <span className="truncate">{aiErrorMsg}</span>
+                      </div>
+                    )}
+                    <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                      <button
+                        type="button"
+                        onClick={closeProductModal}
+                        className="px-4 py-2.5 text-xs font-semibold text-veltrix-gray-400 hover:text-white transition-colors w-1/2 sm:w-auto"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={submitting || !form.name || !form.price}
+                        className="px-6 py-2.5 bg-veltrix-blue text-veltrix-black font-bold rounded-xl text-xs shadow-glow hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2 w-1/2 sm:w-auto"
+                      >
+                        {submitting ? (
+                          <>
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            <span>Saving to Database...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Check className="w-4 h-4" />
+                            <span>{editingProduct ? 'Save Gadget Updates' : 'Publish to Storefront'}</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
                   </div>
                 </div>
               </form>

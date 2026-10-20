@@ -1,8 +1,22 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
-export default function LazyImage({ src, alt, className, ...props }) {
+const DEFAULT_GADGET_FALLBACK = 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&auto=format&fit=crop&q=80'
+
+export default function LazyImage({ 
+  src, 
+  alt = 'Product image', 
+  className = '', 
+  imgClassName = '',
+  ...props 
+}) {
   const [loaded, setLoaded] = useState(false)
   const [error, setError] = useState(false)
+
+  // Reset loaded/error when src changes
+  useEffect(() => {
+    setLoaded(false)
+    setError(false)
+  }, [src])
 
   const handleLoad = () => {
     setLoaded(true)
@@ -10,24 +24,32 @@ export default function LazyImage({ src, alt, className, ...props }) {
 
   const handleError = () => {
     setError(true)
-    setLoaded(true) // stop loading animation
+    setLoaded(true)
   }
 
+  const imageSrc = !src || error ? DEFAULT_GADGET_FALLBACK : src
+
   return (
-    <div className={`relative overflow-hidden bg-veltrix-gray-900 ${className}`} {...props}>
+    <div 
+      className={`relative w-full h-full overflow-hidden bg-veltrix-gray-900 flex items-center justify-center ${className}`} 
+      {...props}
+    >
       {!loaded && (
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="w-8 h-8 border-2 border-veltrix-blue border-t-transparent rounded-full animate-spin opacity-50" />
+        <div className="absolute inset-0 flex items-center justify-center bg-veltrix-gray-900/80 z-10">
+          <div className="w-8 h-8 border-2 border-veltrix-blue border-t-transparent rounded-full animate-spin opacity-70" />
         </div>
       )}
       <img
-        src={error ? 'https://images.unsplash.com/photo-1593784991095-a205069470b6?w=200&blur=20' : src}
+        src={imageSrc}
         alt={alt}
         onLoad={handleLoad}
         onError={handleError}
         loading="lazy"
-        className={`w-full h-full object-cover transition-opacity duration-500 ${loaded ? 'opacity-100' : 'opacity-0'} ${className}`}
+        className={`w-full h-full object-cover transition-all duration-500 ${
+          loaded ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
+        } ${imgClassName}`}
       />
     </div>
   )
 }
+

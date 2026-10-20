@@ -200,7 +200,7 @@ BEGIN
   END IF;
 
   -- 2. Check exact authorized administrator email (exact match, prevents wildcard escalation)
-  IF (auth.jwt() ->> 'email') = 'admin@carrygoexpress.com' THEN
+  IF (auth.jwt() ->> 'email') IN ('admin@carrygoexpress.com', 'admin@carrygoexpress.store', 'support@carrygoexpress.store') THEN
     RETURN TRUE;
   END IF;
 

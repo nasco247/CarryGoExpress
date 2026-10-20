@@ -5,6 +5,7 @@ import { useProducts } from '../hooks/useProducts'
 import { GADGET_CATEGORIES, GADGET_BRANDS, getSubcategoriesForCategory } from '../lib/gadgetCategories'
 
 const sortOptions = [
+  { value: 'created_at:desc', label: 'Newest Arrivals' },
   { value: 'name:asc', label: 'Name: A-Z' },
   { value: 'name:desc', label: 'Name: Z-A' },
   { value: 'price:asc', label: 'Price: Low to High' },
@@ -14,7 +15,9 @@ const sortOptions = [
 
 export default function ProductGrid({ filters = {}, hideSidebar = false, hideHeader = false }) {
   const [viewMode, setViewMode] = useState('grid')
-  const [sortBy, setSortBy] = useState('name:asc')
+  const [sortBy, setSortBy] = useState(
+    filters.sortBy ? `${filters.sortBy}:${filters.sortOrder || 'desc'}` : 'created_at:desc'
+  )
   const [showFilters, setShowFilters] = useState(false)
 
   const [priceRange, setPriceRange] = useState([0, 5000])

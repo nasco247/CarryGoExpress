@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom'
+import { ArrowRight, ShoppingBag } from 'lucide-react'
 import Hero from '../components/Hero'
 import FeaturedCategories from '../components/FeaturedCategories'
 import ProductGrid from '../components/ProductGrid'
@@ -13,7 +15,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <span className="text-sm font-semibold text-veltrix-blue uppercase tracking-widest">
-              Best Sellers
+              Latest Additions & Flagships
             </span>
             <h2 className="text-3xl lg:text-4xl font-bold text-white mt-3">
               Featured Flagship Gadgets
@@ -22,7 +24,19 @@ export default function Home() {
               Discover our top-rated smartphones, laptops, audio gear, and gaming tech handpicked for quality and performance
             </p>
           </div>
-          <ProductGrid filters={{ limit: 8 }} hideSidebar hideHeader />
+          <ProductGrid filters={{ limit: 8, sortBy: 'created_at', sortOrder: 'desc' }} hideSidebar hideHeader />
+
+          {/* View All Products CTA */}
+          <div className="mt-12 text-center">
+            <Link
+              to="/products"
+              className="inline-flex items-center gap-3 px-8 py-4 bg-veltrix-blue text-veltrix-black font-extrabold rounded-xl hover:shadow-glow-lg transition-all duration-300 hover:-translate-y-0.5 text-base"
+            >
+              <ShoppingBag className="w-5 h-5" />
+              <span>Browse All Gadgets & Products</span>
+              <ArrowRight className="w-5 h-5" />
+            </Link>
+          </div>
         </div>
       </section>
 

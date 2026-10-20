@@ -91,7 +91,7 @@ export default function ProductDetail() {
     ? Math.round(((product.original_price - product.price) / product.original_price) * 100)
     : 0
 
-  const images = product.image ? [product.image] : ['https://images.unsplash.com/photo-1593784991095-a205069470b6?w=700']
+  const images = product.image ? [product.image] : ['https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800']
 
   return (
     <div className="pt-24 pb-16">
@@ -103,9 +103,17 @@ export default function ProductDetail() {
             <ArrowLeft className="w-3.5 h-3.5" /> Home
           </Link>
           <ChevronRight className="w-4 h-4" />
-          <Link to={`/products?category=${encodeURIComponent(product.category || '')}`} className="hover:text-veltrix-blue transition-colors">
-            {product.category}
+          <Link to="/products" className="hover:text-veltrix-blue transition-colors">
+            All Products
           </Link>
+          {product.category && (
+            <>
+              <ChevronRight className="w-4 h-4" />
+              <Link to={`/products?category=${encodeURIComponent(product.category || '')}`} className="hover:text-veltrix-blue transition-colors">
+                {product.category}
+              </Link>
+            </>
+          )}
           {product.subcategory && (
             <>
               <ChevronRight className="w-4 h-4" />
@@ -125,7 +133,7 @@ export default function ProductDetail() {
               <LazyImage
                 src={images[activeImage] || images[0]}
                 alt={product.name}
-                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                imgClassName="group-hover:scale-105 transition-transform duration-500"
               />
               {product.badge && (
                 <span className="absolute top-4 left-4 px-3 py-1 bg-veltrix-blue text-veltrix-black text-xs font-bold rounded-full">

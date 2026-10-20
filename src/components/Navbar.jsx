@@ -18,7 +18,7 @@ export default function Navbar() {
   const handleSearch = (e) => {
     e.preventDefault()
     if (searchQuery.trim()) {
-      navigate(`/category/televisions?search=${encodeURIComponent(searchQuery)}`)
+      navigate(`/products?search=${encodeURIComponent(searchQuery.trim())}`)
       setSearchQuery('')
     }
   }
@@ -43,6 +43,7 @@ export default function Navbar() {
 
   const navLinks = [
     { name: 'Home', path: '/' },
+    { name: 'All Gadgets', path: '/products' },
     { name: 'Phones', path: '/products?category=Smartphones%20%26%20Tablets' },
     { name: 'Laptops', path: '/products?category=Laptops%20%26%20Computers' },
     { name: 'Wearables', path: '/products?category=Smartwatches%20%26%20Wearables' },

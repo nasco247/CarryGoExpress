@@ -69,21 +69,33 @@ export function useProducts(filters = {}) {
     fetchProducts()
 
     // ── Supabase Realtime channel for live product tracking on user-end ──
-    const channel = supabase
-      .channel('public-products-changes')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'products' },
-        (payload) => {
-          console.log('[useProducts Realtime] Product change detected:', payload.eventType)
-          // Refetch to ensure filters and sorting remain consistent
-          fetchProducts()
-        }
-      )
-      .subscribe()
+    // Use unique instance ID so multiple components on the same page don't collide
+    const channelId = `public-products-${Math.random().toString(36).substring(2, 9)}`
+    let channel = null
+
+    try {
+      channel = supabase
+        .channel(channelId)
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'products' },
+          (payload) => {
+            console.log('[useProducts Realtime] Product change detected:', payload.eventType)
+            // Refetch to ensure filters and sorting remain consistent
+            fetchProducts()
+          }
+        )
+        .subscribe()
+    } catch (subErr) {
+      console.warn('[useProducts Realtime] Subscription issue:', subErr)
+    }
 
     return () => {
-      supabase.removeChannel(channel)
+      if (channel) {
+        try {
+          supabase.removeChannel(channel)
+        } catch {}
+      }
     }
   }, [JSON.stringify(filters)])
 
@@ -134,21 +146,32 @@ export function useProduct(id) {
 
     fetchProduct()
 
-    // Realtime update for this specific product (e.g. stock or price update by admin)
-    const channel = supabase
-      .channel(`product-${id}`)
-      .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'products', filter: `id=eq.${id}` },
-        (payload) => {
-          console.log('[useProduct Realtime] Live update for product:', payload.new)
-          setProduct(payload.new)
-        }
-      )
-      .subscribe()
+    // Realtime update for this specific product with unique channel instance
+    const channelId = `product-${id}-${Math.random().toString(36).substring(2, 9)}`
+    let channel = null
+
+    try {
+      channel = supabase
+        .channel(channelId)
+        .on(
+          'postgres_changes',
+          { event: 'UPDATE', schema: 'public', table: 'products', filter: `id=eq.${id}` },
+          (payload) => {
+            console.log('[useProduct Realtime] Live update for product:', payload.new)
+            setProduct(payload.new)
+          }
+        )
+        .subscribe()
+    } catch (subErr) {
+      console.warn('[useProduct Realtime] Subscription issue:', subErr)
+    }
 
     return () => {
-      supabase.removeChannel(channel)
+      if (channel) {
+        try {
+          supabase.removeChannel(channel)
+        } catch {}
+      }
     }
   }, [id])
 

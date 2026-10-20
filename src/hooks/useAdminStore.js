@@ -205,6 +205,15 @@ export const useAdminStore = create((set, get) => ({
 
     console.log('[useAdminStore] Initializing Supabase Realtime tracking for entire app...')
 
+    try {
+      if (typeof supabase.getChannels === 'function') {
+        const existing = supabase.getChannels().find(c => c.topic === 'realtime:admin-realtime-tracker')
+        if (existing) {
+          supabase.removeChannel(existing)
+        }
+      }
+    } catch {}
+
     const channel = supabase
       .channel('admin-realtime-tracker')
       // 1. Live Orders (User end)

@@ -91,6 +91,7 @@ export default function App() {
 
   return (
     <>
+      <ScrollToTop />
       <VisitorTracker />
       <Routes>
         {/* ── Public Routes ── */}

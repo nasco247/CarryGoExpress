@@ -117,15 +117,25 @@ export function useProduct(id) {
   const [error, setError] = useState(null)
 
   useEffect(() => {
+    if (!id) return
+
+    // Immediately pre-seed from cache on id change to prevent stale display
+    const cached = getCachedProducts()
+    const cachedMatch = cached.find(p => p.id === id)
+    if (cachedMatch) {
+      setProduct(cachedMatch)
+      setLoading(false)
+    } else {
+      setLoading(true)
+    }
+
     const fetchProduct = async () => {
-      if (!id) return
       try {
-        if (!product) setLoading(true)
         const { data, error: sbError } = await getProductById(id)
 
         if (sbError) {
           console.warn('[useProduct] Supabase fetch notice:', sbError.message)
-          if (!product) {
+          if (!cachedMatch) {
             setError(sbError.message)
             setProduct(null)
           }
@@ -135,7 +145,7 @@ export function useProduct(id) {
         }
       } catch (err) {
         console.error('[useProduct] Unexpected error:', err)
-        if (!product) {
+        if (!cachedMatch) {
           setError(err.message)
           setProduct(null)
         }

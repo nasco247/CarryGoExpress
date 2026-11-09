@@ -2,15 +2,25 @@ import { useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
 
 export default function ScrollToTop() {
-  const { pathname } = useLocation()
+  const { pathname, search } = useLocation()
 
   useEffect(() => {
-    window.scrollTo({
-      top: 0,
-      left: 0,
-      behavior: 'instant',
+    // Immediately disable smooth scroll so the viewport snaps to top on navigation
+    const html = document.documentElement
+    const originalScrollBehavior = html.style.scrollBehavior
+    html.style.scrollBehavior = 'auto'
+
+    window.scrollTo(0, 0)
+    document.documentElement.scrollTop = 0
+    document.body.scrollTop = 0
+
+    // Restore smooth scroll behavior for in-page anchors
+    const raf = requestAnimationFrame(() => {
+      html.style.scrollBehavior = originalScrollBehavior
     })
-  }, [pathname])
+
+    return () => cancelAnimationFrame(raf)
+  }, [pathname, search])
 
   return null
 }

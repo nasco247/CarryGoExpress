@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import {
   Star, ShoppingCart, Heart, Share2, Truck, Shield,
@@ -24,6 +24,26 @@ export default function ProductDetail() {
   const [addedToCart, setAddedToCart] = useState(false)
   const [activeTab, setActiveTab] = useState('description')
   const [relatedProducts, setRelatedProducts] = useState([])
+
+  // Ensure scroll is immediately at the top on product navigation / change
+  useEffect(() => {
+    const html = document.documentElement
+    const originalScrollBehavior = html.style.scrollBehavior
+    html.style.scrollBehavior = 'auto'
+
+    window.scrollTo(0, 0)
+    document.documentElement.scrollTop = 0
+    document.body.scrollTop = 0
+
+    const raf = requestAnimationFrame(() => {
+      html.style.scrollBehavior = originalScrollBehavior
+    })
+
+    setActiveImage(0)
+    setQuantity(1)
+
+    return () => cancelAnimationFrame(raf)
+  }, [id])
 
   // Fetch real related products from Supabase
   useEffect(() => {
@@ -91,7 +111,22 @@ export default function ProductDetail() {
     ? Math.round(((product.original_price - product.price) / product.original_price) * 100)
     : 0
 
-  const images = product.image ? [product.image] : ['https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800']
+  const images = useMemo(() => {
+    if (!product) return []
+    let list = []
+    if (Array.isArray(product.images) && product.images.length > 0) {
+      list = product.images
+    } else if (typeof product.image === 'string' && product.image.trim().startsWith('[')) {
+      try {
+        const parsed = JSON.parse(product.image)
+        if (Array.isArray(parsed) && parsed.length > 0) list = parsed
+      } catch {}
+    } else if (product.image) {
+      list = [product.image]
+    }
+    list = list.filter(img => typeof img === 'string' && img.trim().length > 0)
+    return list.length > 0 ? list : ['https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800']
+  }, [product?.image, product?.images])
 
   return (
     <div className="pt-24 pb-16">
@@ -133,20 +168,41 @@ export default function ProductDetail() {
               <LazyImage
                 src={images[activeImage] || images[0]}
                 alt={product.name}
+                priority={true}
                 imgClassName="group-hover:scale-105 transition-transform duration-500"
               />
               {product.badge && (
-                <span className="absolute top-4 left-4 px-3 py-1 bg-veltrix-blue text-veltrix-black text-xs font-bold rounded-full">
+                <span className="absolute top-4 left-4 px-3 py-1 bg-veltrix-blue text-veltrix-black text-xs font-bold rounded-full z-10">
                   {product.badge}
                 </span>
               )}
               {discountPercent > 0 && (
-                <span className="absolute top-4 right-4 px-3 py-1 bg-red-500 text-white text-xs font-bold rounded-full flex items-center gap-1">
+                <span className="absolute top-4 right-4 px-3 py-1 bg-red-500 text-white text-xs font-bold rounded-full flex items-center gap-1 z-10">
                   <Zap className="w-3 h-3 fill-current" />
                   -{discountPercent}%
                 </span>
               )}
             </div>
+
+            {/* Gallery Thumbnails if multiple images exist */}
+            {images.length > 1 && (
+              <div className="flex items-center gap-3 overflow-x-auto pb-2 no-scrollbar">
+                {images.map((imgUrl, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => setActiveImage(idx)}
+                    className={`relative w-20 h-20 rounded-xl overflow-hidden border-2 transition-all shrink-0 ${
+                      activeImage === idx
+                        ? 'border-veltrix-blue shadow-glow'
+                        : 'border-veltrix-gray-800 hover:border-veltrix-gray-600 opacity-60 hover:opacity-100'
+                    }`}
+                  >
+                    <img src={imgUrl} alt={`${product.name} thumbnail ${idx + 1}`} className="w-full h-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* ── Product Info ── */}

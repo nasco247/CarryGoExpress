@@ -27,11 +27,13 @@ export default function ProductCard({ product }) {
 
       {/* Image Container */}
       <div className="relative aspect-square overflow-hidden bg-veltrix-gray-900">
-        <LazyImage
-          src={product.image}
-          alt={product.name}
-          imgClassName="group-hover:scale-110 transition-transform duration-500"
-        />
+        <Link to={`/product/${product.id}`} className="block w-full h-full cursor-pointer">
+          <LazyImage
+            src={product.image}
+            alt={product.name}
+            imgClassName="group-hover:scale-110 transition-transform duration-500"
+          />
+        </Link>
 
         {/* Overlay Actions */}
         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-3">

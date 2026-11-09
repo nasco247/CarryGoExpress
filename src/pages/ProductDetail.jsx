@@ -77,6 +77,24 @@ export default function ProductDetail() {
     setTimeout(() => setAddedToCart(false), 2500)
   }
 
+  // Pre-calculate images unconditionally to comply with React Rules of Hooks
+  const images = useMemo(() => {
+    if (!product) return []
+    let list = []
+    if (Array.isArray(product.images) && product.images.length > 0) {
+      list = product.images
+    } else if (typeof product.image === 'string' && product.image.trim().startsWith('[')) {
+      try {
+        const parsed = JSON.parse(product.image)
+        if (Array.isArray(parsed) && parsed.length > 0) list = parsed
+      } catch { }
+    } else if (product.image) {
+      list = [product.image]
+    }
+    list = list.filter(img => typeof img === 'string' && img.trim().length > 0)
+    return list.length > 0 ? list : ['https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800']
+  }, [product?.image, product?.images])
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -112,23 +130,6 @@ export default function ProductDetail() {
   const discountPercent = product.original_price && product.original_price > product.price
     ? Math.round(((product.original_price - product.price) / product.original_price) * 100)
     : 0
-
-  const images = useMemo(() => {
-    if (!product) return []
-    let list = []
-    if (Array.isArray(product.images) && product.images.length > 0) {
-      list = product.images
-    } else if (typeof product.image === 'string' && product.image.trim().startsWith('[')) {
-      try {
-        const parsed = JSON.parse(product.image)
-        if (Array.isArray(parsed) && parsed.length > 0) list = parsed
-      } catch { }
-    } else if (product.image) {
-      list = [product.image]
-    }
-    list = list.filter(img => typeof img === 'string' && img.trim().length > 0)
-    return list.length > 0 ? list : ['https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800']
-  }, [product?.image, product?.images])
 
   return (
     <div className="pt-20 lg:pt-24 pb-16">
@@ -195,11 +196,10 @@ export default function ProductDetail() {
                     key={idx}
                     type="button"
                     onClick={() => setActiveImage(idx)}
-                    className={`relative w-16 h-16 sm:w-18 sm:h-18 rounded-xl overflow-hidden border-2 transition-all shrink-0 bg-veltrix-black-light p-1 ${
-                      activeImage === idx
+                    className={`relative w-16 h-16 sm:w-18 sm:h-18 rounded-xl overflow-hidden border-2 transition-all shrink-0 bg-veltrix-black-light p-1 ${activeImage === idx
                         ? 'border-veltrix-blue shadow-glow scale-105'
                         : 'border-veltrix-gray-800/80 hover:border-veltrix-gray-600 opacity-60 hover:opacity-100'
-                    }`}
+                      }`}
                   >
                     <img src={imgUrl} alt={`${product.name} thumbnail ${idx + 1}`} className="w-full h-full object-contain" />
                   </button>
@@ -248,11 +248,10 @@ export default function ProductDetail() {
                 <span className="text-veltrix-gray-400">({product.reviews || 0})</span>
               </div>
 
-              <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border ${
-                product.in_stock !== false 
-                  ? 'bg-green-500/10 border-green-500/20 text-green-400' 
+              <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border ${product.in_stock !== false
+                  ? 'bg-green-500/10 border-green-500/20 text-green-400'
                   : 'bg-red-500/10 border-red-500/20 text-red-400'
-              }`}>
+                }`}>
                 <span className={`w-1.5 h-1.5 rounded-full ${product.in_stock !== false ? 'bg-green-400 animate-pulse' : 'bg-red-400'}`} />
                 {product.in_stock !== false ? `In Stock (${product.stock ?? 10} available)` : 'Out of Stock'}
               </span>
@@ -304,11 +303,10 @@ export default function ProductDetail() {
               </div>
 
               {/* Description Content with Expandable Reveal */}
-              <div className={`relative transition-all duration-300 ${
-                ((product.description || '').length > 170 || (product.description || '').includes('\n')) && !isDescExpanded 
-                  ? 'max-h-16 overflow-hidden' 
+              <div className={`relative transition-all duration-300 ${((product.description || '').length > 170 || (product.description || '').includes('\n')) && !isDescExpanded
+                  ? 'max-h-16 overflow-hidden'
                   : 'max-h-none'
-              }`}>
+                }`}>
                 <p className="text-veltrix-gray-300 text-xs sm:text-sm leading-relaxed whitespace-pre-line">
                   {product.description || 'Brand new flagship gadget with verified manufacturer warranty, express insured delivery, and easy installments.'}
                 </p>
@@ -368,13 +366,12 @@ export default function ProductDetail() {
                 <button
                   onClick={handleAddToCart}
                   disabled={product.in_stock === false}
-                  className={`flex-1 flex items-center justify-center gap-2 py-3 px-5 sm:py-3.5 sm:px-6 rounded-xl text-sm font-bold transition-all duration-300 ${
-                    product.in_stock === false
+                  className={`flex-1 flex items-center justify-center gap-2 py-3 px-5 sm:py-3.5 sm:px-6 rounded-xl text-sm font-bold transition-all duration-300 ${product.in_stock === false
                       ? 'bg-veltrix-gray-800 text-veltrix-gray-600 cursor-not-allowed'
                       : addedToCart
-                      ? 'bg-green-500 text-white shadow-lg'
-                      : 'bg-veltrix-blue text-veltrix-black hover:shadow-glow-lg hover:-translate-y-0.5'
-                  }`}
+                        ? 'bg-green-500 text-white shadow-lg'
+                        : 'bg-veltrix-blue text-veltrix-black hover:shadow-glow-lg hover:-translate-y-0.5'
+                    }`}
                 >
                   {addedToCart ? (
                     <>
@@ -391,11 +388,10 @@ export default function ProductDetail() {
 
                 <button
                   onClick={() => setIsWishlisted(!isWishlisted)}
-                  className={`p-3 sm:p-3.5 rounded-xl border transition-all ${
-                    isWishlisted
+                  className={`p-3 sm:p-3.5 rounded-xl border transition-all ${isWishlisted
                       ? 'bg-red-500/20 border-red-500/40 text-red-400'
                       : 'bg-veltrix-black-light border-veltrix-gray-800 text-veltrix-gray-400 hover:text-white'
-                  }`}
+                    }`}
                   aria-label="Wishlist"
                   title="Save to Wishlist"
                 >

@@ -92,7 +92,7 @@ export default function LazyImage({
           onError={handleError}
           loading={priority ? 'eager' : 'lazy'}
           decoding={priority ? 'sync' : 'async'}
-          className={`w-full h-full object-cover transition-all duration-300 ${loaded ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
+          className={`w-full h-full ${imgClassName.includes('object-') ? '' : 'object-cover'} transition-all duration-300 ${loaded ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
             } ${imgClassName}`}
         />
       )}

@@ -131,11 +131,11 @@ export default function ProductDetail() {
   }, [product?.image, product?.images])
 
   return (
-    <div className="pt-24 pb-16">
+    <div className="pt-20 lg:pt-24 pb-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
         {/* ── Breadcrumb ── */}
-        <nav className="flex items-center gap-2 text-sm text-veltrix-gray-500 mb-8 flex-wrap">
+        <nav className="flex items-center gap-2 text-xs sm:text-sm text-veltrix-gray-500 mb-5 lg:mb-6 flex-wrap">
           <Link to="/" className="hover:text-veltrix-blue transition-colors flex items-center gap-1">
             <ArrowLeft className="w-3.5 h-3.5" /> Home
           </Link>
@@ -161,25 +161,26 @@ export default function ProductDetail() {
           <span className="text-veltrix-gray-300 truncate max-w-xs">{product.name}</span>
         </nav>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 xl:gap-12 items-start">
 
-          {/* ── Image Gallery ── */}
-          <div className="space-y-4">
+          {/* ── Image Gallery (Left Column - Moderated & Sticky on Desktop) ── */}
+          <div className="lg:col-span-5 lg:sticky lg:top-24 space-y-3.5">
             {/* Main image */}
-            <div className="relative aspect-square bg-veltrix-black-light rounded-2xl border border-veltrix-gray-800/50 overflow-hidden group">
+            <div className="relative aspect-square max-w-[400px] xl:max-w-[440px] max-h-[400px] xl:max-h-[440px] mx-auto w-full bg-gradient-to-b from-veltrix-black-light to-veltrix-black rounded-2xl border border-veltrix-gray-800/80 overflow-hidden group shadow-2xl flex items-center justify-center">
               <LazyImage
                 src={images[activeImage] || images[0]}
                 alt={product.name}
                 priority={true}
-                imgClassName="group-hover:scale-105 transition-transform duration-500"
+                className="w-full h-full flex items-center justify-center"
+                imgClassName="object-contain p-3 sm:p-5 group-hover:scale-105 transition-transform duration-500"
               />
               {product.badge && (
-                <span className="absolute top-4 left-4 px-3 py-1 bg-veltrix-blue text-veltrix-black text-xs font-bold rounded-full z-10">
+                <span className="absolute top-3.5 left-3.5 px-3 py-1 bg-veltrix-blue text-veltrix-black text-xs font-bold rounded-full z-10 shadow-glow">
                   {product.badge}
                 </span>
               )}
               {discountPercent > 0 && (
-                <span className="absolute top-4 right-4 px-3 py-1 bg-red-500 text-white text-xs font-bold rounded-full flex items-center gap-1 z-10">
+                <span className="absolute top-3.5 right-3.5 px-2.5 py-1 bg-red-500 text-white text-xs font-bold rounded-full flex items-center gap-1 z-10 shadow-lg">
                   <Zap className="w-3 h-3 fill-current" />
                   -{discountPercent}%
                 </span>
@@ -188,67 +189,92 @@ export default function ProductDetail() {
 
             {/* Gallery Thumbnails if multiple images exist */}
             {images.length > 1 && (
-              <div className="flex items-center gap-3 overflow-x-auto pb-2 no-scrollbar">
+              <div className="flex items-center justify-center gap-2.5 overflow-x-auto py-1 max-w-[400px] xl:max-w-[440px] mx-auto no-scrollbar">
                 {images.map((imgUrl, idx) => (
                   <button
                     key={idx}
                     type="button"
                     onClick={() => setActiveImage(idx)}
-                    className={`relative w-20 h-20 rounded-xl overflow-hidden border-2 transition-all shrink-0 ${activeImage === idx
-                        ? 'border-veltrix-blue shadow-glow'
-                        : 'border-veltrix-gray-800 hover:border-veltrix-gray-600 opacity-60 hover:opacity-100'
-                      }`}
+                    className={`relative w-16 h-16 sm:w-18 sm:h-18 rounded-xl overflow-hidden border-2 transition-all shrink-0 bg-veltrix-black-light p-1 ${
+                      activeImage === idx
+                        ? 'border-veltrix-blue shadow-glow scale-105'
+                        : 'border-veltrix-gray-800/80 hover:border-veltrix-gray-600 opacity-60 hover:opacity-100'
+                    }`}
                   >
-                    <img src={imgUrl} alt={`${product.name} thumbnail ${idx + 1}`} className="w-full h-full object-cover" />
+                    <img src={imgUrl} alt={`${product.name} thumbnail ${idx + 1}`} className="w-full h-full object-contain" />
                   </button>
                 ))}
               </div>
             )}
           </div>
 
-          {/* ── Product Info ── */}
-          <div className="space-y-6">
+          {/* ── Product Info (Right Column) ── */}
+          <div className="lg:col-span-7 space-y-4 lg:space-y-4.5">
             <div>
-              <p className="text-sm font-semibold text-veltrix-blue uppercase tracking-wider mb-2">
-                {product.brand || 'CarryGoExpress'} • {product.category}
-              </p>
-              <h1 className="text-2xl sm:text-3xl font-bold text-white leading-tight">
+              <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                <span className="text-xs font-bold text-veltrix-blue uppercase tracking-wider">
+                  {product.brand || 'CarryGoExpress'}
+                </span>
+                <span className="text-veltrix-gray-600">•</span>
+                <span className="text-xs text-veltrix-gray-400 font-medium">
+                  {product.category}
+                </span>
+                {product.subcategory && (
+                  <>
+                    <span className="text-veltrix-gray-600">•</span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-md bg-veltrix-blue/10 text-veltrix-blue font-semibold border border-veltrix-blue/20">
+                      {product.subcategory}
+                    </span>
+                  </>
+                )}
+              </div>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-white leading-snug tracking-tight">
                 {product.name}
               </h1>
             </div>
 
             {/* Rating & Stock */}
-            <div className="flex items-center gap-4 flex-wrap">
-              <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-3.5 flex-wrap text-xs">
+              <div className="flex items-center gap-1.5 bg-veltrix-black-light px-2.5 py-1 rounded-lg border border-veltrix-gray-800/60">
                 <div className="flex text-yellow-400">
                   {[...Array(5)].map((_, i) => (
                     <Star
                       key={i}
-                      className={`w-4 h-4 ${i < Math.floor(product.rating || 4.5) ? 'fill-current' : 'opacity-40'}`}
+                      className={`w-3.5 h-3.5 ${i < Math.floor(product.rating || 4.5) ? 'fill-current' : 'opacity-30'}`}
                     />
                   ))}
                 </div>
-                <span className="text-sm font-medium text-white">{product.rating || 4.5}</span>
-                <span className="text-sm text-veltrix-gray-500">({product.reviews || 0} reviews)</span>
+                <span className="font-bold text-white ml-0.5">{product.rating || 4.5}</span>
+                <span className="text-veltrix-gray-400">({product.reviews || 0})</span>
               </div>
-              <span className="text-veltrix-gray-700">•</span>
-              <span className={`inline-flex items-center gap-1.5 text-sm font-medium ${product.in_stock !== false ? 'text-green-400' : 'text-red-400'}`}>
-                <span className={`w-2 h-2 rounded-full ${product.in_stock !== false ? 'bg-green-400' : 'bg-red-400'}`} />
+
+              <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border ${
+                product.in_stock !== false 
+                  ? 'bg-green-500/10 border-green-500/20 text-green-400' 
+                  : 'bg-red-500/10 border-red-500/20 text-red-400'
+              }`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${product.in_stock !== false ? 'bg-green-400 animate-pulse' : 'bg-red-400'}`} />
                 {product.in_stock !== false ? `In Stock (${product.stock ?? 10} available)` : 'Out of Stock'}
               </span>
+
+              {product.sku && (
+                <span className="text-[11px] text-veltrix-gray-500 font-mono hidden sm:inline">
+                  SKU: {product.sku}
+                </span>
+              )}
             </div>
 
             {/* Price */}
-            <div className="p-4 bg-veltrix-black-light rounded-xl border border-veltrix-gray-800/50 flex items-baseline gap-4">
-              <span className="text-3xl sm:text-4xl font-extrabold text-white">
+            <div className="py-3 px-4 sm:py-3.5 sm:px-5 bg-gradient-to-r from-veltrix-black-light via-veltrix-black-light/90 to-veltrix-black rounded-xl border border-veltrix-gray-800/80 flex items-baseline gap-3 flex-wrap">
+              <span className="text-2xl sm:text-3xl lg:text-4xl font-black text-white">
                 {formatPrice(product.price)}
               </span>
               {product.original_price && product.original_price > product.price && (
                 <>
-                  <span className="text-xl text-veltrix-gray-500 line-through">
+                  <span className="text-base sm:text-lg text-veltrix-gray-500 line-through">
                     {formatPrice(product.original_price)}
                   </span>
-                  <span className="px-2.5 py-1 bg-green-500/20 text-green-400 text-xs font-bold rounded-lg">
+                  <span className="px-2 py-0.5 bg-green-500/15 border border-green-500/30 text-green-400 text-xs font-bold rounded-md">
                     Save {formatPrice(product.original_price - product.price)}
                   </span>
                 </>
@@ -256,20 +282,17 @@ export default function ProductDetail() {
             </div>
 
             {/* ── Sleek Expandable Product Description Card ── */}
-            <div className="bg-veltrix-black-light/80 rounded-2xl border border-veltrix-gray-800/80 p-4 sm:p-5 relative transition-all duration-300 hover:border-veltrix-gray-700/80 group/desc">
+            <div className="bg-veltrix-black-light/70 rounded-xl border border-veltrix-gray-800/80 p-3.5 sm:p-4 relative transition-all duration-300 hover:border-veltrix-gray-700/80 group/desc">
               {/* Header Description */}
-              <div className="flex items-center justify-between gap-2 mb-3 pb-2.5 border-b border-veltrix-gray-800/60">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-7 h-7 rounded-lg bg-veltrix-blue/15 border border-veltrix-blue/30 flex items-center justify-center text-veltrix-blue shrink-0">
-                    <FileText className="w-4 h-4" />
+              <div className="flex items-center justify-between gap-2 mb-2 pb-2 border-b border-veltrix-gray-800/50">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-md bg-veltrix-blue/15 border border-veltrix-blue/30 flex items-center justify-center text-veltrix-blue shrink-0">
+                    <FileText className="w-3.5 h-3.5" />
                   </div>
                   <div>
                     <h3 className="text-xs font-bold text-white uppercase tracking-wider">
-                      Product Description
+                      Product Overview
                     </h3>
-                    <p className="text-[10px] text-veltrix-gray-400">
-                      Features, specs & verified gadget details
-                    </p>
                   </div>
                 </div>
 
@@ -283,16 +306,16 @@ export default function ProductDetail() {
               {/* Description Content with Expandable Reveal */}
               <div className={`relative transition-all duration-300 ${
                 ((product.description || '').length > 170 || (product.description || '').includes('\n')) && !isDescExpanded 
-                  ? 'max-h-24 overflow-hidden' 
+                  ? 'max-h-16 overflow-hidden' 
                   : 'max-h-none'
               }`}>
-                <p className="text-veltrix-gray-300 text-sm leading-relaxed whitespace-pre-line">
+                <p className="text-veltrix-gray-300 text-xs sm:text-sm leading-relaxed whitespace-pre-line">
                   {product.description || 'Brand new flagship gadget with verified manufacturer warranty, express insured delivery, and easy installments.'}
                 </p>
 
                 {/* Bottom Fade Gradient when collapsed */}
                 {((product.description || '').length > 170 || (product.description || '').includes('\n')) && !isDescExpanded && (
-                  <div className="absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-veltrix-black-light via-veltrix-black-light/80 to-transparent pointer-events-none" />
+                  <div className="absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-veltrix-black-light via-veltrix-black-light/80 to-transparent pointer-events-none" />
                 )}
               </div>
 
@@ -301,10 +324,10 @@ export default function ProductDetail() {
                 <button
                   type="button"
                   onClick={() => setIsDescExpanded(!isDescExpanded)}
-                  className="mt-3 pt-2 w-full flex items-center justify-center gap-1.5 text-xs font-bold text-veltrix-blue hover:text-white transition-colors border-t border-veltrix-gray-800/50 group/btn"
+                  className="mt-2 pt-1.5 w-full flex items-center justify-center gap-1 text-[11px] font-bold text-veltrix-blue hover:text-white transition-colors border-t border-veltrix-gray-800/40 group/btn"
                 >
                   <span>{isDescExpanded ? 'Show Less' : 'Show Full Description'}</span>
-                  <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-300 ${isDescExpanded ? 'rotate-180 text-white' : 'group-hover/btn:translate-y-0.5'}`} />
+                  <ChevronDown className={`w-3 h-3 transition-transform duration-300 ${isDescExpanded ? 'rotate-180 text-white' : 'group-hover/btn:translate-y-0.5'}`} />
                 </button>
               )}
             </div>
@@ -317,49 +340,50 @@ export default function ProductDetail() {
             />
 
             {/* Quantity + Actions */}
-            <div className="space-y-4 pt-2">
-              <div className="flex items-center gap-4">
-                <span className="text-sm font-medium text-veltrix-gray-400">Quantity:</span>
+            <div className="space-y-3 pt-1">
+              <div className="flex items-center gap-3">
+                <span className="text-xs font-semibold text-veltrix-gray-400">Quantity:</span>
                 <div className="flex items-center bg-veltrix-black-light border border-veltrix-gray-800 rounded-xl">
                   <button
                     onClick={() => setQuantity(q => Math.max(1, q - 1))}
-                    className="p-3 text-veltrix-gray-400 hover:text-white transition-colors"
+                    className="p-2.5 text-veltrix-gray-400 hover:text-white transition-colors"
                     aria-label="Decrease quantity"
                   >
-                    <Minus className="w-4 h-4" />
+                    <Minus className="w-3.5 h-3.5" />
                   </button>
-                  <span className="px-4 py-2 font-bold text-white min-w-[3rem] text-center">
+                  <span className="px-3 py-1 font-bold text-white min-w-[2.5rem] text-center text-sm">
                     {quantity}
                   </span>
                   <button
                     onClick={() => setQuantity(q => q + 1)}
-                    className="p-3 text-veltrix-gray-400 hover:text-white transition-colors"
+                    className="p-2.5 text-veltrix-gray-400 hover:text-white transition-colors"
                     aria-label="Increase quantity"
                   >
-                    <Plus className="w-4 h-4" />
+                    <Plus className="w-3.5 h-3.5" />
                   </button>
                 </div>
               </div>
 
-              <div className="flex gap-4">
+              <div className="flex gap-2.5 sm:gap-3">
                 <button
                   onClick={handleAddToCart}
                   disabled={product.in_stock === false}
-                  className={`flex-1 flex items-center justify-center gap-2 py-4 px-6 rounded-xl font-bold transition-all duration-300 ${product.in_stock === false
+                  className={`flex-1 flex items-center justify-center gap-2 py-3 px-5 sm:py-3.5 sm:px-6 rounded-xl text-sm font-bold transition-all duration-300 ${
+                    product.in_stock === false
                       ? 'bg-veltrix-gray-800 text-veltrix-gray-600 cursor-not-allowed'
                       : addedToCart
-                        ? 'bg-green-500 text-white shadow-lg'
-                        : 'bg-veltrix-blue text-veltrix-black hover:shadow-glow-lg hover:-translate-y-0.5'
-                    }`}
+                      ? 'bg-green-500 text-white shadow-lg'
+                      : 'bg-veltrix-blue text-veltrix-black hover:shadow-glow-lg hover:-translate-y-0.5'
+                  }`}
                 >
                   {addedToCart ? (
                     <>
-                      <Check className="w-5 h-5" />
+                      <Check className="w-4 h-4" />
                       Added to Cart!
                     </>
                   ) : (
                     <>
-                      <ShoppingCart className="w-5 h-5" />
+                      <ShoppingCart className="w-4 h-4" />
                       {product.in_stock === false ? 'Out of Stock' : 'Add to Cart'}
                     </>
                   )}
@@ -367,13 +391,15 @@ export default function ProductDetail() {
 
                 <button
                   onClick={() => setIsWishlisted(!isWishlisted)}
-                  className={`p-4 rounded-xl border transition-all ${isWishlisted
+                  className={`p-3 sm:p-3.5 rounded-xl border transition-all ${
+                    isWishlisted
                       ? 'bg-red-500/20 border-red-500/40 text-red-400'
                       : 'bg-veltrix-black-light border-veltrix-gray-800 text-veltrix-gray-400 hover:text-white'
-                    }`}
+                  }`}
                   aria-label="Wishlist"
+                  title="Save to Wishlist"
                 >
-                  <Heart className={`w-5 h-5 ${isWishlisted ? 'fill-current' : ''}`} />
+                  <Heart className={`w-4 h-4 ${isWishlisted ? 'fill-current text-red-500' : ''}`} />
                 </button>
 
                 <button
@@ -385,30 +411,30 @@ export default function ProductDetail() {
                       alert('Product link copied to clipboard!')
                     }
                   }}
-                  className="p-4 rounded-xl border bg-veltrix-black-light border-veltrix-gray-800 text-veltrix-gray-400 hover:text-white transition-colors"
+                  className="p-3 sm:p-3.5 rounded-xl border bg-veltrix-black-light border-veltrix-gray-800 text-veltrix-gray-400 hover:text-white transition-colors"
                   aria-label="Share"
+                  title="Share product link"
                 >
-                  <Share2 className="w-5 h-5" />
+                  <Share2 className="w-4 h-4" />
                 </button>
               </div>
             </div>
 
             {/* Value Props */}
-            <div className="grid grid-cols-3 gap-3 pt-4 border-t border-veltrix-gray-800">
-              <div className="flex items-center gap-2 text-xs text-veltrix-gray-400">
-                <Truck className="w-4 h-4 text-veltrix-blue shrink-0" />
-                <span>Fast Nationwide Delivery</span>
+            <div className="grid grid-cols-3 gap-2.5 pt-3 border-t border-veltrix-gray-800/80">
+              <div className="flex items-center gap-2 p-2.5 rounded-xl bg-veltrix-black-light/40 border border-veltrix-gray-800/40 text-[11px] text-veltrix-gray-400">
+                <Truck className="w-3.5 h-3.5 text-veltrix-blue shrink-0" />
+                <span className="truncate">Fast Delivery</span>
               </div>
-              <div className="flex items-center gap-2 text-xs text-veltrix-gray-400">
-                <Shield className="w-4 h-4 text-veltrix-blue shrink-0" />
-                <span>2-Year Warranty</span>
+              <div className="flex items-center gap-2 p-2.5 rounded-xl bg-veltrix-black-light/40 border border-veltrix-gray-800/40 text-[11px] text-veltrix-gray-400">
+                <Shield className="w-3.5 h-3.5 text-veltrix-blue shrink-0" />
+                <span className="truncate">2-Yr Warranty</span>
               </div>
-              <div className="flex items-center gap-2 text-xs text-veltrix-gray-400">
-                <RotateCcw className="w-4 h-4 text-veltrix-blue shrink-0" />
-                <span>7-Day Return Policy</span>
+              <div className="flex items-center gap-2 p-2.5 rounded-xl bg-veltrix-black-light/40 border border-veltrix-gray-800/40 text-[11px] text-veltrix-gray-400">
+                <RotateCcw className="w-3.5 h-3.5 text-veltrix-blue shrink-0" />
+                <span className="truncate">7-Day Return</span>
               </div>
             </div>
-
           </div>
         </div>
 

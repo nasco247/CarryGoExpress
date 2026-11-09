@@ -103,13 +103,15 @@ export default function Deals() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {flashDeals.map(p => (
                 <div key={p.id} className="group relative bg-veltrix-black-light border border-red-500/20 hover:border-red-500/50 rounded-2xl overflow-hidden p-5 transition-all">
-                  <div className="relative aspect-video rounded-xl overflow-hidden mb-4 bg-veltrix-black">
-                    <LazyImage src={p.image} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                  <Link to={`/product/${p.id}`} className="block relative aspect-video rounded-xl overflow-hidden mb-4 bg-veltrix-black group/dealimg">
+                    <LazyImage src={p.image} alt={p.name} className="w-full h-full object-cover group-hover/dealimg:scale-105 transition-transform" />
                     <span className="absolute top-2 left-2 px-2.5 py-1 bg-red-600 text-white font-black text-xs rounded-full">
                       -{p.discount}% OFF
                     </span>
-                  </div>
-                  <h3 className="font-bold text-white text-base truncate mb-1">{p.name}</h3>
+                  </Link>
+                  <Link to={`/product/${p.id}`} className="block hover:text-veltrix-blue transition-colors">
+                    <h3 className="font-bold text-white hover:text-veltrix-blue text-base truncate mb-1 transition-colors">{p.name}</h3>
+                  </Link>
                   <div className="flex items-baseline gap-2 mb-4">
                     <span className="text-xl font-extrabold text-white">{formatPrice(p.price)}</span>
                     <span className="text-sm text-veltrix-gray-500 line-through">{formatPrice(p.original_price)}</span>

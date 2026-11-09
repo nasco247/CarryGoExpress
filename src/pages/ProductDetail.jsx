@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom'
 import {
   Star, ShoppingCart, Heart, Share2, Truck, Shield,
   RotateCcw, ChevronRight, Minus, Plus, Check,
-  Package, ArrowLeft, Zap
+  Package, ArrowLeft, Zap, FileText, ChevronDown
 } from 'lucide-react'
 import { useProduct } from '../hooks/useProducts'
 import { useCartStore } from '../hooks/useStore'
@@ -23,6 +23,7 @@ export default function ProductDetail() {
   const [isWishlisted, setIsWishlisted] = useState(false)
   const [addedToCart, setAddedToCart] = useState(false)
   const [activeTab, setActiveTab] = useState('description')
+  const [isDescExpanded, setIsDescExpanded] = useState(false)
   const [relatedProducts, setRelatedProducts] = useState([])
 
   // Ensure scroll is immediately at the top on product navigation / change
@@ -41,6 +42,7 @@ export default function ProductDetail() {
 
     setActiveImage(0)
     setQuantity(1)
+    setIsDescExpanded(false)
 
     return () => cancelAnimationFrame(raf)
   }, [id])
@@ -120,7 +122,7 @@ export default function ProductDetail() {
       try {
         const parsed = JSON.parse(product.image)
         if (Array.isArray(parsed) && parsed.length > 0) list = parsed
-      } catch {}
+      } catch { }
     } else if (product.image) {
       list = [product.image]
     }
@@ -192,11 +194,10 @@ export default function ProductDetail() {
                     key={idx}
                     type="button"
                     onClick={() => setActiveImage(idx)}
-                    className={`relative w-20 h-20 rounded-xl overflow-hidden border-2 transition-all shrink-0 ${
-                      activeImage === idx
+                    className={`relative w-20 h-20 rounded-xl overflow-hidden border-2 transition-all shrink-0 ${activeImage === idx
                         ? 'border-veltrix-blue shadow-glow'
                         : 'border-veltrix-gray-800 hover:border-veltrix-gray-600 opacity-60 hover:opacity-100'
-                    }`}
+                      }`}
                   >
                     <img src={imgUrl} alt={`${product.name} thumbnail ${idx + 1}`} className="w-full h-full object-cover" />
                   </button>
@@ -254,14 +255,63 @@ export default function ProductDetail() {
               )}
             </div>
 
-            {/* Short Description */}
-            <p className="text-veltrix-gray-300 text-sm leading-relaxed">
-              {product.description}
-            </p>
+            {/* ── Sleek Expandable Product Description Card ── */}
+            <div className="bg-veltrix-black-light/80 rounded-2xl border border-veltrix-gray-800/80 p-4 sm:p-5 relative transition-all duration-300 hover:border-veltrix-gray-700/80 group/desc">
+              {/* Header Description */}
+              <div className="flex items-center justify-between gap-2 mb-3 pb-2.5 border-b border-veltrix-gray-800/60">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-7 h-7 rounded-lg bg-veltrix-blue/15 border border-veltrix-blue/30 flex items-center justify-center text-veltrix-blue shrink-0">
+                    <FileText className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-xs font-bold text-white uppercase tracking-wider">
+                      Product Description
+                    </h3>
+                    <p className="text-[10px] text-veltrix-gray-400">
+                      Features, specs & verified gadget details
+                    </p>
+                  </div>
+                </div>
+
+                {((product.description || '').length > 170 || (product.description || '').includes('\n')) && (
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-veltrix-gray-800 text-veltrix-blue font-semibold border border-veltrix-blue/20">
+                    {isDescExpanded ? 'Full Details' : 'Preview'}
+                  </span>
+                )}
+              </div>
+
+              {/* Description Content with Expandable Reveal */}
+              <div className={`relative transition-all duration-300 ${
+                ((product.description || '').length > 170 || (product.description || '').includes('\n')) && !isDescExpanded 
+                  ? 'max-h-24 overflow-hidden' 
+                  : 'max-h-none'
+              }`}>
+                <p className="text-veltrix-gray-300 text-sm leading-relaxed whitespace-pre-line">
+                  {product.description || 'Brand new flagship gadget with verified manufacturer warranty, express insured delivery, and easy installments.'}
+                </p>
+
+                {/* Bottom Fade Gradient when collapsed */}
+                {((product.description || '').length > 170 || (product.description || '').includes('\n')) && !isDescExpanded && (
+                  <div className="absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-veltrix-black-light via-veltrix-black-light/80 to-transparent pointer-events-none" />
+                )}
+              </div>
+
+              {/* Show More / Show Less Toggle Button */}
+              {((product.description || '').length > 170 || (product.description || '').includes('\n')) && (
+                <button
+                  type="button"
+                  onClick={() => setIsDescExpanded(!isDescExpanded)}
+                  className="mt-3 pt-2 w-full flex items-center justify-center gap-1.5 text-xs font-bold text-veltrix-blue hover:text-white transition-colors border-t border-veltrix-gray-800/50 group/btn"
+                >
+                  <span>{isDescExpanded ? 'Show Less' : 'Show Full Description'}</span>
+                  <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-300 ${isDescExpanded ? 'rotate-180 text-white' : 'group-hover/btn:translate-y-0.5'}`} />
+                </button>
+              )}
+            </div>
 
             {/* Expandable Installment Plan Set View (Pay Complete & Ship Now vs Pay in Months up to a Year) */}
-            <InstallmentPlanView 
-              price={product.price * quantity} 
+            <InstallmentPlanView
+              price={product.price * quantity}
               defaultExpanded={false}
               showSelectButtons={false}
             />
@@ -295,13 +345,12 @@ export default function ProductDetail() {
                 <button
                   onClick={handleAddToCart}
                   disabled={product.in_stock === false}
-                  className={`flex-1 flex items-center justify-center gap-2 py-4 px-6 rounded-xl font-bold transition-all duration-300 ${
-                    product.in_stock === false
+                  className={`flex-1 flex items-center justify-center gap-2 py-4 px-6 rounded-xl font-bold transition-all duration-300 ${product.in_stock === false
                       ? 'bg-veltrix-gray-800 text-veltrix-gray-600 cursor-not-allowed'
                       : addedToCart
-                      ? 'bg-green-500 text-white shadow-lg'
-                      : 'bg-veltrix-blue text-veltrix-black hover:shadow-glow-lg hover:-translate-y-0.5'
-                  }`}
+                        ? 'bg-green-500 text-white shadow-lg'
+                        : 'bg-veltrix-blue text-veltrix-black hover:shadow-glow-lg hover:-translate-y-0.5'
+                    }`}
                 >
                   {addedToCart ? (
                     <>
@@ -318,11 +367,10 @@ export default function ProductDetail() {
 
                 <button
                   onClick={() => setIsWishlisted(!isWishlisted)}
-                  className={`p-4 rounded-xl border transition-all ${
-                    isWishlisted
+                  className={`p-4 rounded-xl border transition-all ${isWishlisted
                       ? 'bg-red-500/20 border-red-500/40 text-red-400'
                       : 'bg-veltrix-black-light border-veltrix-gray-800 text-veltrix-gray-400 hover:text-white'
-                  }`}
+                    }`}
                   aria-label="Wishlist"
                 >
                   <Heart className={`w-5 h-5 ${isWishlisted ? 'fill-current' : ''}`} />
@@ -371,9 +419,8 @@ export default function ProductDetail() {
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`pb-4 text-sm font-bold uppercase tracking-wider transition-colors relative ${
-                  activeTab === tab ? 'text-veltrix-blue' : 'text-veltrix-gray-500 hover:text-white'
-                }`}
+                className={`pb-4 text-sm font-bold uppercase tracking-wider transition-colors relative ${activeTab === tab ? 'text-veltrix-blue' : 'text-veltrix-gray-500 hover:text-white'
+                  }`}
               >
                 {tab}
                 {activeTab === tab && (
@@ -384,11 +431,34 @@ export default function ProductDetail() {
           </div>
 
           {activeTab === 'description' && (
-            <div className="max-w-3xl space-y-4 text-veltrix-gray-300 text-sm leading-relaxed">
-              <p>{product.description}</p>
-              <p>
-                All CarryGoExpress electronics are 100% genuine and verified for optimal power efficiency, high performance, and long lifespan. Tested to meet rigorous international standards.
-              </p>
+            <div className="max-w-4xl space-y-6">
+              <div className="p-6 bg-veltrix-black-light/90 rounded-2xl border border-veltrix-gray-800/80 space-y-4">
+                <div className="flex items-center gap-2.5 text-sm font-bold text-white uppercase tracking-wider pb-3 border-b border-veltrix-gray-800">
+                  <FileText className="w-4 h-4 text-veltrix-blue" />
+                  <span>Comprehensive Gadget Specifications & Description</span>
+                </div>
+                <div className="text-veltrix-gray-300 text-sm leading-relaxed whitespace-pre-line space-y-3">
+                  <p>{product.description || 'Full technical specifications and details for this gadget.'}</p>
+                  <p className="text-xs text-veltrix-gray-400 pt-2 border-t border-veltrix-gray-800/40">
+                    All CarryGoExpress electronics are 100% genuine and verified for optimal power efficiency, high performance, and long lifespan. Tested to meet rigorous international standards.
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="p-4 bg-veltrix-black-light/60 rounded-xl border border-veltrix-gray-800/60">
+                  <h4 className="text-xs font-bold text-veltrix-blue uppercase mb-1">Authenticity</h4>
+                  <p className="text-xs text-veltrix-gray-400">100% Genuine, sealed retail package with factory warranty.</p>
+                </div>
+                <div className="p-4 bg-veltrix-black-light/60 rounded-xl border border-veltrix-gray-800/60">
+                  <h4 className="text-xs font-bold text-veltrix-blue uppercase mb-1">Official Warranty</h4>
+                  <p className="text-xs text-veltrix-gray-400">24 months official coverage against manufacturer defects.</p>
+                </div>
+                <div className="p-4 bg-veltrix-black-light/60 rounded-xl border border-veltrix-gray-800/60">
+                  <h4 className="text-xs font-bold text-veltrix-blue uppercase mb-1">Express Dispatch</h4>
+                  <p className="text-xs text-veltrix-gray-400">Fully insured trackable shipping across all 50 states.</p>
+                </div>
+              </div>
             </div>
           )}
 

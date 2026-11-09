@@ -1,10 +1,11 @@
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Star, ShoppingCart, Heart, Eye } from 'lucide-react'
 import { useCartStore } from '../hooks/useStore'
 import { formatPrice } from '../lib/utils'
 import LazyImage from './LazyImage'
 
 export default function ProductCard({ product }) {
+  const navigate = useNavigate()
   const { addItem } = useCartStore()
   const discount = product.original_price 
     ? Math.round(((product.original_price - product.price) / product.original_price) * 100) 
@@ -25,9 +26,9 @@ export default function ProductCard({ product }) {
         </div>
       )}
 
-      {/* Image Container */}
-      <div className="relative aspect-square overflow-hidden bg-veltrix-gray-900">
-        <Link to={`/product/${product.id}`} className="block w-full h-full cursor-pointer">
+      {/* Image Container - Clicking anywhere on image navigates to detailed page */}
+      <div className="relative aspect-square overflow-hidden bg-veltrix-gray-900 group/img">
+        <Link to={`/product/${product.id}`} className="block w-full h-full cursor-pointer" aria-label={`View ${product.name}`}>
           <LazyImage
             src={product.image}
             alt={product.name}
@@ -36,24 +37,40 @@ export default function ProductCard({ product }) {
         </Link>
 
         {/* Overlay Actions */}
-        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-3">
+        <div 
+          onClick={() => navigate(`/product/${product.id}`)}
+          className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-3 cursor-pointer"
+        >
           <button
+            type="button"
             onClick={(e) => {
               e.preventDefault()
+              e.stopPropagation()
               addItem(product)
             }}
-            className="w-12 h-12 bg-white text-veltrix-black rounded-full flex items-center justify-center hover:bg-veltrix-blue transition-colors transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300"
+            className="w-11 h-11 bg-white text-veltrix-black rounded-full flex items-center justify-center hover:bg-veltrix-blue transition-colors transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300 shadow-lg"
+            title="Add to Cart"
           >
-            <ShoppingCart className="w-5 h-5" />
+            <ShoppingCart className="w-4 h-4" />
           </button>
           <Link
             to={`/product/${product.id}`}
-            className="w-12 h-12 bg-white text-veltrix-black rounded-full flex items-center justify-center hover:bg-veltrix-blue transition-colors transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300 delay-75"
+            onClick={(e) => e.stopPropagation()}
+            className="w-11 h-11 bg-white text-veltrix-black rounded-full flex items-center justify-center hover:bg-veltrix-blue transition-colors transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300 delay-75 shadow-lg"
+            title="View Product Details"
           >
-            <Eye className="w-5 h-5" />
+            <Eye className="w-4 h-4" />
           </Link>
-          <button className="w-12 h-12 bg-white text-veltrix-black rounded-full flex items-center justify-center hover:bg-red-500 hover:text-white transition-colors transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300 delay-150">
-            <Heart className="w-5 h-5" />
+          <button 
+            type="button"
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+            }}
+            className="w-11 h-11 bg-white text-veltrix-black rounded-full flex items-center justify-center hover:bg-red-500 hover:text-white transition-colors transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300 delay-150 shadow-lg"
+            title="Wishlist"
+          >
+            <Heart className="w-4 h-4" />
           </button>
         </div>
       </div>

@@ -3,13 +3,13 @@ import { Package } from 'lucide-react'
 
 const DEFAULT_GADGET_FALLBACK = 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&auto=format&fit=crop&q=80'
 
-export default function LazyImage({ 
-  src, 
-  alt = 'Product image', 
-  className = '', 
+export default function LazyImage({
+  src,
+  alt = 'Product image',
+  className = '',
   imgClassName = '',
   priority = false,
-  ...props 
+  ...props
 }) {
   const [loaded, setLoaded] = useState(false)
   const [error, setError] = useState(false)
@@ -66,8 +66,8 @@ export default function LazyImage({
   }
 
   return (
-    <div 
-      className={`relative w-full h-full overflow-hidden bg-veltrix-gray-900 flex items-center justify-center ${className}`} 
+    <div
+      className={`relative w-full h-full overflow-hidden bg-veltrix-gray-900 flex items-center justify-center ${className}`}
       {...props}
     >
       {/* Loading Spinner */}
@@ -92,9 +92,8 @@ export default function LazyImage({
           onError={handleError}
           loading={priority ? 'eager' : 'lazy'}
           decoding={priority ? 'sync' : 'async'}
-          className={`w-full h-full object-cover transition-all duration-300 ${
-            loaded ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
-          } ${imgClassName}`}
+          className={`w-full h-full object-cover transition-all duration-300 ${loaded ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
+            } ${imgClassName}`}
         />
       )}
     </div>

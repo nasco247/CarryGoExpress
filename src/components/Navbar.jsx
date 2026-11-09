@@ -58,7 +58,7 @@ export default function Navbar() {
         'fixed top-0 left-0 right-0 z-50 transition-all duration-500',
         isScrolled
           ? 'bg-veltrix-black/95 backdrop-blur-xl shadow-lg shadow-black/20'
-          : 'bg-transparent'
+          : 'bg-gradient-to-b from-veltrix-black/85 via-veltrix-black/40 to-transparent'
       )}
     >
       {/* Top bar */}

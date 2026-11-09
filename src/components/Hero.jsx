@@ -63,21 +63,26 @@ export default function Hero() {
 
   // Construct dynamic slides: combine latest live products with verified category banners
   const slides = useMemo(() => {
-    const productSlides = (liveProducts || []).slice(0, 4).map((p) => ({
-      id: `prod-${p.id}`,
-      title: p.name,
-      subtitle: `${p.brand || 'CarryGo'} • ${p.category || 'Gadgets'}`,
-      description: p.description && p.description.length > 20
-        ? (p.description.length > 175 ? p.description.slice(0, 175) + '...' : p.description)
-        : 'Brand new flagship gadget with verified manufacturer warranty, express insured delivery, and easy installments.',
-      image: p.image || 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=1200',
-      cta: `Explore Product • $${(Number(p.price) || 0).toLocaleString()}`,
-      link: `/product/${p.id}`,
-      tag: p.badge || (p.subcategory || 'New Arrival'),
-      price: p.price,
-      original_price: p.original_price,
-      isLiveProduct: true
-    }))
+    const productSlides = (liveProducts || []).slice(0, 4).map((p) => {
+      const rawDesc = (p.description || '').replace(/<[^>]*>?/gm, '').trim()
+      const cleanDesc = rawDesc && rawDesc.length > 20
+        ? (rawDesc.length > 160 ? rawDesc.slice(0, 160).trim() + '...' : rawDesc)
+        : 'Brand new flagship gadget with verified manufacturer warranty, express insured delivery, and easy installments.'
+
+      return {
+        id: `prod-${p.id}`,
+        title: p.name,
+        subtitle: `${p.brand || 'CarryGo'} • ${p.category || 'Gadgets'}`,
+        description: cleanDesc,
+        image: p.image || 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=1200',
+        cta: `Explore Product • $${(Number(p.price) || 0).toLocaleString()}`,
+        link: `/product/${p.id}`,
+        tag: p.badge || (p.subcategory || 'New Arrival'),
+        price: p.price,
+        original_price: p.original_price,
+        isLiveProduct: true
+      }
+    })
 
     if (productSlides.length >= 3) {
       // Merge top products with 2 category highlight slides
@@ -106,7 +111,7 @@ export default function Hero() {
   const prev = () => setCurrent((prev) => (prev - 1 + slides.length) % slides.length)
 
   // Touch handlers for swipe
-  const minSwipeDistance = 50 
+  const minSwipeDistance = 50
 
   const onTouchStart = (e) => {
     setTouchEnd(null)
@@ -124,8 +129,8 @@ export default function Hero() {
 
   return (
     <div className="relative">
-      <section 
-        className="relative h-[620px] lg:h-[720px] overflow-hidden"
+      <section
+        className="relative min-h-[660px] sm:min-h-[720px] lg:min-h-[780px] h-[86vh] max-h-[860px] overflow-hidden"
         onMouseEnter={() => setIsAutoPlaying(false)}
         onMouseLeave={() => setIsAutoPlaying(true)}
         onTouchStart={onTouchStart}
@@ -137,9 +142,8 @@ export default function Hero() {
           return (
             <div
               key={slide.id}
-              className={`absolute inset-0 transition-all duration-1000 ${
-                isActive ? 'opacity-100 scale-100 z-10' : 'opacity-0 scale-105 pointer-events-none z-0'
-              }`}
+              className={`absolute inset-0 transition-all duration-1000 ${isActive ? 'opacity-100 scale-100 z-10' : 'opacity-0 scale-105 pointer-events-none z-0'
+                }`}
             >
               {/* Background Image */}
               <div className="absolute inset-0">
@@ -155,13 +159,12 @@ export default function Hero() {
                 <div className="absolute inset-0 bg-veltrix-black/35 backdrop-blur-[1px]" />
               </div>
 
-              {/* Slide Content (Centered) */}
-              <div className="relative h-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-center pt-14 lg:pt-0 pb-20">
-                <div className={`max-w-3xl mx-auto flex flex-col items-center text-center transition-all duration-1000 delay-200 ${
-                  isActive ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'
-                }`}>
-                  <div className="inline-flex items-center justify-center gap-2 px-3.5 py-1.5 lg:px-4 lg:py-2 bg-veltrix-blue/20 border border-veltrix-blue/35 rounded-full mb-3 lg:mb-5 backdrop-blur-md">
-                    <Zap className="w-3.5 h-3.5 lg:w-4 lg:h-4 text-veltrix-blue" />
+              {/* Slide Content (Centered with Safe Top Clearance for Fixed Navbar) */}
+              <div className="relative h-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-center pt-28 sm:pt-32 lg:pt-36 pb-16 sm:pb-20">
+                <div className={`max-w-4xl mx-auto flex flex-col items-center text-center transition-all duration-1000 delay-200 ${isActive ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'
+                  }`}>
+                  <div className="inline-flex items-center justify-center gap-2 px-3.5 py-1.5 lg:px-4 lg:py-2 bg-veltrix-blue/20 border border-veltrix-blue/35 rounded-full mb-2.5 lg:mb-4 backdrop-blur-md">
+                    <Zap className="w-3.5 h-3.5 lg:w-4 lg:h-4 text-veltrix-blue shrink-0" />
                     <span className="text-xs lg:text-sm font-bold text-veltrix-blue">{slide.tag}</span>
                     {slide.isLiveProduct && (
                       <span className="ml-1 text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-veltrix-blue text-veltrix-black font-extrabold">
@@ -173,17 +176,23 @@ export default function Hero() {
                   <h2 className="text-xs lg:text-sm font-bold text-veltrix-blue uppercase tracking-widest mb-2">
                     {slide.subtitle}
                   </h2>
-                  <h1 className="text-3xl sm:text-4xl lg:text-6xl font-black text-white mb-3 lg:mb-4 leading-tight tracking-tight drop-shadow-md max-w-2xl">
+                  <h1
+                    className={`font-black text-white mb-3 lg:mb-4 leading-tight tracking-tight drop-shadow-md max-w-4xl line-clamp-2 sm:line-clamp-3 ${(slide.title || '').length > 55
+                        ? 'text-2xl sm:text-3xl md:text-4xl lg:text-5xl'
+                        : 'text-3xl sm:text-4xl md:text-5xl lg:text-6xl'
+                      }`}
+                    title={slide.title}
+                  >
                     {slide.title}
                   </h1>
-                  <p className="text-sm sm:text-base lg:text-lg text-veltrix-gray-300 mb-6 lg:mb-8 leading-relaxed max-w-xl mx-auto">
+                  <p className="text-xs sm:text-base lg:text-lg text-veltrix-gray-300 mb-5 lg:mb-8 leading-relaxed max-w-2xl mx-auto line-clamp-2 sm:line-clamp-3">
                     {slide.description}
                   </p>
 
                   <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4">
                     <Link
                       to={slide.link}
-                      className="inline-flex items-center gap-2 lg:gap-3 px-6 py-3.5 lg:px-8 lg:py-4 bg-veltrix-blue text-veltrix-black text-sm lg:text-base font-black rounded-xl hover:shadow-glow-lg transition-all duration-300 hover:-translate-y-0.5"
+                      className="inline-flex items-center gap-2 lg:gap-3 px-5 py-3 sm:px-6 sm:py-3.5 lg:px-8 lg:py-4 bg-veltrix-blue text-veltrix-black text-xs sm:text-sm lg:text-base font-black rounded-xl hover:shadow-glow-lg transition-all duration-300 hover:-translate-y-0.5"
                     >
                       <span>{slide.cta}</span>
                       <ArrowRight className="w-4 h-4 lg:w-5 lg:h-5" />
@@ -191,7 +200,7 @@ export default function Hero() {
 
                     <Link
                       to="/products"
-                      className="inline-flex items-center gap-2 px-5 py-3.5 bg-white/10 hover:bg-white/15 border border-white/20 text-white text-sm font-semibold rounded-xl backdrop-blur-md transition-all duration-300 hover:-translate-y-0.5"
+                      className="inline-flex items-center gap-2 px-4 py-3 sm:px-5 sm:py-3.5 bg-white/10 hover:bg-white/15 border border-white/20 text-white text-xs sm:text-sm font-semibold rounded-xl backdrop-blur-md transition-all duration-300 hover:-translate-y-0.5"
                     >
                       <ShoppingBag className="w-4 h-4 text-veltrix-blue" />
                       <span>View All Products</span>
@@ -220,17 +229,16 @@ export default function Hero() {
         </button>
 
         {/* Carousel Slide Indicator Dots */}
-        <div className="absolute bottom-16 sm:bottom-20 left-1/2 -translate-x-1/2 flex items-center gap-2.5 z-20">
+        <div className="absolute bottom-5 sm:bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2.5 z-20">
           {slides.map((_, index) => (
             <button
               key={index}
               onClick={() => setCurrent(index)}
               aria-label={`Go to slide ${index + 1}`}
-              className={`transition-all duration-300 rounded-full ${
-                index === activeIndex
+              className={`transition-all duration-300 rounded-full ${index === activeIndex
                   ? 'w-8 h-2.5 bg-veltrix-blue shadow-glow'
                   : 'w-2.5 h-2.5 bg-white/40 hover:bg-white/70'
-              }`}
+                }`}
             />
           ))}
         </div>
